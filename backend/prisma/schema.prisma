@@ -11,3 +11,100 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+enum Role {
+  RETAILER 
+  SUPPLIER
+  ADMIN
+}
+
+enum OrderStatus{
+  PENDING 
+  CONFIRMED 
+  SHIPPED  
+  DELIVERED 
+  CANCELLED
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  password      String    
+  name          String 
+  businessName  String
+  phone         String 
+  role          Role 
+  createdAt     DateTime @default(now())
+
+  products         Product[]      @relation("SupplierProducts")
+  ordersPlaced     Order[]        @relation("RetailerOrders")
+  ordersReceived   Order[]        @relation("SupplierOrders")
+  supplierConnections  SupplierRetailerConnection[]  @relation("SupplierConnections")
+  retailerConnections  SupplierRetailerConnection[]  @relation("RetailerConnections")
+}
+
+model Product{
+  id            String       @id @default(uuid())
+  name          String 
+  description   String? 
+  unitPrice     Decimal      @db.Decimal(10,2)
+  stock         Int          @default(0)
+  createdAt     DateTime     @default(now())
+
+  supplierId    String 
+  supplier      User         @relation("SupplierProducts" , fields: [supplierId], references: [id])
+
+  orderItems    OrderItem[]
+}
+
+model Order{
+  id            String       @id @default(uuid())
+  status        OrderStatus  @default(PENDING)
+  totalAmount   Decimal      @db.Decimal(10,2)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  
+  retailerId    String 
+  retailer      User         @relation("RetailerOrders" , fields: [retailerId], references: [id])
+
+  supplierId    String 
+  supplier      User         @relation("SupplierOrders" , fields: [supplierId], references: [id])
+
+  items         OrderItem[]
+  ledgerEntry   LedgerEntry?
+}
+
+model OrderItem{
+  id            String      @id @default(uuid())
+  quantity      Int 
+  priceAtOrder  Decimal     @db.Decimal(10,2)
+
+  orderId       String 
+  order         Order       @relation(fields: [orderId], references: [id])
+
+  productId     String 
+  product       Product     @relation(fields: [productId], references:[id])
+}
+
+model LedgerEntry{
+  id            String     @id @default(uuid())
+  amount        Decimal    @db.Decimal(10,2)
+  dueDate       DateTime
+  isPaid        Boolean    @default(false)
+  paidAt        DateTime
+  createdAt     DateTime   @default(now())
+
+  orderId       String     @unique
+  order         Order      @relation(fields: [orderId], references:[id])
+}
+
+model SupplierRetailerConnection{
+  id            String     @id @default(uuid())
+  supplierId String
+  supplier   User     @relation("SupplierConnections", fields: [supplierId], references: [id])
+  retailerId String
+  retailer   User     @relation("RetailerConnections", fields: [retailerId], references: [id])
+  createdAt  DateTime @default(now())
+
+  @@unique([supplierId, retailerId])
+}
