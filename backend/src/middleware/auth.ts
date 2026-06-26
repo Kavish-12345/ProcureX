@@ -3,6 +3,7 @@ import { verifyAccessToken } from "../utils/jwt.js";
 import type { JwtPayload } from '../utils/jwt.js';
 import type { Jwt } from "jsonwebtoken";
 
+// To avoid typsecript errors , and to avoid writing "req.user as any".
 declare global{
     namespace Express{
         interface Request{
@@ -11,6 +12,7 @@ declare global{
     }
 }
 
+// Verification of the user using the access token stored in the cookies.
 export function requireAuth(req: Request, res:Response, next: NextFunction) {
     try{
         const token = req.cookies?.accessToken as string | undefined; 
