@@ -14,6 +14,7 @@ export const createOrderSchema = z.object({
 
 export const updateOrderStatusSchema = z.object({
   status: z.enum(['CONFIRMED', 'SHIPPED', 'DELIVERED', 'CANCELLED']),
+  dueDate: z.coerce.date().optional(),
 });
 
 export type CreateOrderInput = z.infer<typeof createOrderSchema>;

@@ -91,7 +91,7 @@ model LedgerEntry{
   amount        Decimal    @db.Decimal(10,2)
   dueDate       DateTime
   isPaid        Boolean    @default(false)
-  paidAt        DateTime
+  paidAt        DateTime?
   createdAt     DateTime   @default(now())
 
   orderId       String     @unique
