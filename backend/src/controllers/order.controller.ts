@@ -200,6 +200,121 @@ export async function updateOrderStatus(req: Request, res: Response) {
   }
 }
 
+export async function getMyOrdersAsRetailer(req: Request, res: Response) {
+  try {
+    const retailerId = req.user!.userId;
+    const orders = await prisma.order.findMany({
+      where: { retailerId },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        supplier: {
+          select: {
+            id: true, name: true, businessName: true
+          },
+        },
+        items: {
+          include: {
+            product: {
+              select: {
+                id: true, name: true, unit: true
+              }
+            }
+          }
+        },
+        ledgerEntry: {
+          select: { amount: true, dueDate: true, isPaid: true, paidAt: true },
+        },
+      }
+    });
+    return res.status(200).json({ orders });
+  } catch (error) {
+    console.error('Get retailer orders error:', error);
+    return res.status(500).json({ message: 'Something went wrong while fetching orders' });
+  }
+}
 
+export async function getMyOrdersAsSupplier(req: Request, res: Response) {
+  try {
+    const supplierId = req.user!.userId;
+    const orders = await prisma.order.findMany({
+      where: { supplierId },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        retailer: {
+          select: {
+            id: true, name: true, businessName: true
+          }
+        },
+        items: {
+          include: {
+            product: {
+              select: {
+                id: true, name: true, unit: true
+              }
+            }
+          }
+        },
+        ledgerEntry: {
+          select: { amount: true, dueDate: true, isPaid: true, paidAt: true },
+        },
+      }
+    });
+    return res.status(200).json({ orders });
+  } catch (error) {
+    console.error('Get supplier orders error:', error);
+    return res.status(500).json({ message: 'Something went wrong while fetching orders' });
+  }
+}
+
+export async function getOrderById(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    const userId = req.user!.userId;
+
+    if (!id || typeof id !== 'string') {
+      return res.status(400).json({ message: 'Invalid order id' });
+    }
+
+
+    const order = await prisma.order.findUnique({
+      where: { id },
+      include: {
+        retailer: {
+          select: {
+            id: true, name: true, businessName: true
+          }
+        },
+        supplier: {
+          select: {
+            id: true, name: true, businessName: true
+          }
+        },
+        items: {
+          include: {
+            product: {
+              select: {
+                id: true, name: true, unit: true, unitPrice: true
+              }
+            }
+          }
+        },
+        ledgerEntry: true,
+      }
+    });
+
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    // Only the retailer or supplier on this order can view it
+    if (order.retailerId !== userId && order.supplierId !== userId) {
+      return res.status(403).json({ message: 'You are not authorized to view this order' });
+    }
+    return res.status(200).json({ order });
+  } catch (error) {
+    console.error('Get order by id error:', error);
+    return res.status(500).json({ message: 'Something went wrong while fetching the order' });
+  }
+}
 
 
