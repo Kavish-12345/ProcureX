@@ -1,3 +1,4 @@
+import './config/index.js';
 import http from 'http';
 import app from './app.js';
 import prisma from './lib/prisma.js';

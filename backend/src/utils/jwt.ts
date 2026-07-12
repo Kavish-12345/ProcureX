@@ -1,10 +1,7 @@
 import jwt from 'jsonwebtoken';
+import { config } from '../config/index.js';
 
-const JWT_SECRET = process.env.JWT_SECRET as string; 
-
-if(!JWT_SECRET){
-    throw new Error('JWT_SECRET is not set in environment variables');
-}
+const JWT_SECRET =  config.jwtSecret;
 
 export interface JwtPayload{
     userId: string;

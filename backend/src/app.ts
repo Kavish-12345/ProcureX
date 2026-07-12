@@ -1,4 +1,6 @@
 import 'dotenv/config';
+import { config } from './config/index.js';
+import {authRateLimiter} from './middleware/rateLimiter.js';
 import express from 'express';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
@@ -16,7 +18,7 @@ const app = express();
 app.use(helmet());
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    origin: config.frontendUrl,
     credentials: true,
   })
 );
@@ -26,7 +28,7 @@ app.use(cookieParser());
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 
 // API Routes
-app.use('/api/auth', authRoutes);
+app.use('/api/auth', authRateLimiter, authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/orders' , orderRoutes); 
 app.use('/api/ledger', ledgerRoutes);
