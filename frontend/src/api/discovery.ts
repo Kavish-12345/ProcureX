@@ -1,26 +1,21 @@
 import client from './client';
-import type { SupplierRetailerConnection } from '@/types';
 
-interface CreateConnectionData {
-    supplierId: string;
+interface Supplier {
+    id: string;
+    name: string;
+    businessName: string;
+    phone: string;
+    createdAt: string;
 }
 
-interface CreateConnectionResponse {
-    message: string;
-    connection: SupplierRetailerConnection;
+interface BrowseSuppliersResponse {
+    suppliers: Supplier[];
 }
 
-interface ConnectionsResponse {
-    connections: SupplierRetailerConnection[];
-}
-
-export const connectionsApi = {
-    // Retailer: connect to a supplier
-    create: (data: CreateConnectionData) =>
-        client.post<CreateConnectionResponse>('/connections', data),
-
-    // Retailer: get their connected suppliers 
-    // Supplier: get their connected retailers
-    getMyConnections: () =>
-        client.get<ConnectionsResponse>('/connections'),
+export const discoveryApi = {
+    // Anyone: browse/search suppliers
+    browseSuppliers: (search?: string) =>
+        client.get<BrowseSuppliersResponse>('/discovery/suppliers', {
+            params: search ? { search } : undefined,
+        }),
 };
