@@ -60,11 +60,11 @@ function SiteHeader() {
           <a href="#flow" className="text-black/50 transition-colors hover:text-black">
             How it works
           </a>
-          <Link to={"/login" as any} className="text-black/50 transition-colors hover:text-black">
+          <Link to={"/auth/login" as any} className="text-black/50 transition-colors hover:text-black">
             Log in
           </Link>
           <Link
-            to={"/login" as any}
+            to={"/auth/signup" as any}
             className="border border-black bg-black px-5 py-2 text-xs font-semibold uppercase tracking-wide text-white transition-colors hover:bg-white hover:text-black"
           >
             Open an account
@@ -115,7 +115,7 @@ function Hero() {
 
         <div className="mt-8 flex items-center gap-6">
           <Link
-            to={"/login" as any}
+            to={"/auth/signup" as any}
             className="border border-black bg-black px-6 py-3 text-sm font-semibold uppercase tracking-wide text-white transition-colors hover:bg-white hover:text-black"
           >
             Open an account
@@ -169,13 +169,6 @@ function Hero() {
             </div>
           ))}
         </div>
-
-        <p className="mt-6 text-[13px] text-black/50">
-          Free to open. No card required.{' '}
-          <Link to={"/login" as any} className="font-semibold text-black underline underline-offset-4">
-            Open an account →
-          </Link>
-        </p>
       </div>
     </section>
   )
