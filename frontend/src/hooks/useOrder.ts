@@ -18,6 +18,7 @@ export function useCreateOrder() {
 export function useUpdateOrderStatus() {
     const queryClient = useQueryClient();
     return useMutation({
+        // Parameters<T> is a built-in TypeScript utility type that extracts a function's parameter types as a tuple.
         mutationFn: ({ id, data }: { id: string; data: Parameters<typeof ordersApi.updateStatus>[1] }) =>
             ordersApi.updateStatus(id, data),
         onSuccess: (_res, variables) => {
