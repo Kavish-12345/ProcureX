@@ -25,16 +25,18 @@ export function Sidebar() {
     const links = user?.role === 'SUPPLIER' ? supplierLinks : retailerLinks;
 
     return (
-        <aside className="flex h-screen w-56 flex-col border-r bg-background">
-            <div className="border-b px-4 py-4">
-                <span className="text-lg font-semibold">SupplyChain</span>
+        <aside className="flex h-screen w-56 flex-col border-r border-black bg-white">
+            <div className="border-b border-black px-5 py-4">
+                <span className="font-mono text-[15px] font-bold tracking-tight text-black">
+                    ProcureX
+                </span>
             </div>
             <nav className="flex flex-1 flex-col gap-1 p-3">
                 {links.map((link) => (
                     <Link
                         key={link.to}
                         to={link.to}
-                        className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground [&.active]:bg-muted [&.active]:text-foreground"
+                        className="px-3 py-2 font-mono text-[11px] font-semibold uppercase tracking-wide text-black/50 transition-colors hover:text-black [&.active]:bg-black [&.active]:text-white"
                         activeProps={{ className: 'active' }}
                     >
                         {link.label}

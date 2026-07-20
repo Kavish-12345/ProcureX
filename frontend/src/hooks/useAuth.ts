@@ -11,7 +11,7 @@ export function useSignUp() {
         mutationFn: authApi.signup,
         onSuccess: (res) => {
             setUser(res.data.user);
-            navigate({ to: '/' });
+            navigate({ to: '/dashboard' });
         },
     });
 };
@@ -24,7 +24,7 @@ export function useLogin() {
         mutationFn: authApi.login,
         onSuccess: (res) => {
             setUser(res.data.user);
-            navigate({ to: '/' });
+            navigate({ to: '/dashboard' });
         },
     });
 }
@@ -39,7 +39,7 @@ export function useLogout() {
         onSuccess: () => {
             clearUser();
             queryClient.clear();
-            navigate({ to: '/' });
+            navigate({ to: '/auth/login' });
         },
     });
 }

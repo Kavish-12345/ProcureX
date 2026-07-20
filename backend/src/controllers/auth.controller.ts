@@ -64,6 +64,7 @@ export async function signup(req: Request, res:Response){
         id: user.id,
         email: user.email,
         name: user.name,
+        businessName: user.businessName,
         role: user.role,
       },
     });
@@ -100,6 +101,7 @@ export async function login(req: Request, res: Response) {
         id: user.id,
         email: user.email,
         name: user.name,
+        businessName: user.businessName,
         role: user.role,
       },
     });

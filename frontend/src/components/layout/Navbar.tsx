@@ -6,19 +6,20 @@ export function Navbar() {
     const { mutate: logout, isPending } = useLogout();
 
     return (
-        <header className="flex h-14 items-center justify-between border-b bg-background px-6">
-            <div className="text-sm text-muted-foreground">
+        <header className="flex h-14 items-center justify-between border-b border-black bg-white px-6">
+            <div className="font-mono text-[11px] uppercase tracking-wide text-black ">
                 {user?.businessName}
             </div>
-            <div className="flex items-center gap-3">
-                <span className="text-sm font-medium">{user?.name}</span>
-                <span className="rounded-full bg-muted px-2 py-0.5 text-xs">{user?.role}</span>
+            <div className="flex items-center gap-4">
+                <span className="border border-black/20 px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wide text-black/50">
+                    {user?.role}
+                </span>
                 <button
                     onClick={() => logout()}
                     disabled={isPending}
-                    className="text-sm font-medium text-destructive disabled:opacity-50"
+                    className="font-mono cursor-pointer text-[11px] font-semibold uppercase tracking-wide text-black underline underline-offset-4 disabled:opacity-50"
                 >
-                    {isPending ? 'Logging out...' : 'Logout'}
+                    {isPending ? 'Logging out…' : 'Logout'}
                 </button>
             </div>
         </header>
