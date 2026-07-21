@@ -28,15 +28,44 @@ export async function createProduct (req: Request, res: Response){
     }
 }
 
-export async function getMyProducts(req: Request , res: Response) {
-  try{
-  const supplierId = req.user!.userId; 
+export async function getMyProducts(req: Request, res: Response) {
+  try {
+    const supplierId = req.user!.userId;
+    const page = Math.max(parseInt(req.query.page as string) || 1, 1);
+    const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
+    const search = (req.query.search as string)?.trim();
 
-  const products = await prisma.product.findMany({
-    where: {supplierId},
-    orderBy: {createdAt: 'desc'}
-  }); 
-  return res.status(200).json({ products });
+    const where = {
+      supplierId,
+      ...(search && {
+        name: { contains: search, mode: 'insensitive' as const },
+      }),
+    };
+
+    const [products, total] = await Promise.all([
+      prisma.product.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.product.count({ where }),
+    ]);
+
+    const productsWithTotal = products.map((p) => ({
+      ...p,
+      totalValue: Number(p.unitPrice) * p.stock,
+    }));
+
+    return res.status(200).json({
+      products: productsWithTotal,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    });
   } catch (error) {
     console.error('Get my products error:', error);
     return res.status(500).json({ message: 'Something went wrong while fetching products' });
@@ -44,28 +73,33 @@ export async function getMyProducts(req: Request , res: Response) {
 }
 
 export async function getProductById(req: Request, res: Response) {
-  try{
-    const { id } = req.params; 
+  try {
+    const { id } = req.params;
 
     if (!id || typeof id !== 'string') {
       return res.status(400).json({ message: 'Invalid product id' });
     }
 
     const product = await prisma.product.findUnique({
-      where: { id }, 
+      where: { id },
       include: {
         supplier: {
           select: { id: true, name: true, businessName: true },
         },
       },
     });
-    
+
     if (!product) {
       return res.status(404).json({ message: 'Product not found' });
     }
 
-    return res.status(200).json({ product });
-    } catch (error) {
+    const productWithTotal = {
+      ...product,
+      totalValue: Number(product.unitPrice) * product.stock,
+    };
+
+    return res.status(200).json({ product: productWithTotal });
+  } catch (error) {
     console.error('Get product by id error:', error);
     return res.status(500).json({ message: 'Something went wrong while fetching the product' });
   }

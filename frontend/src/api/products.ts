@@ -12,8 +12,22 @@ interface CreateProductData {
 // Partial<T> is a TypeScript utility type. Makes every field optional. 
 interface UpdateProductData extends Partial<CreateProductData> { }
 
+interface GetProductsParams {
+    page?: number;
+    limit?: number;
+    search?: string;
+}
+
+interface PaginationInfo {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+}
+
 interface ProductsResponse {
     products: Product[];
+    pagination: PaginationInfo;
 }
 
 interface ProductResponse {
@@ -22,8 +36,8 @@ interface ProductResponse {
 
 export const productsApi = {
     // Supplier: get their own products
-    getMyProducts: () =>
-        client.get<ProductsResponse>('/products'),
+    getMyProducts: (params?: GetProductsParams) =>
+        client.get<ProductsResponse>('/products', { params }),
 
     // Anyone: get a single product by id
     getById: (id: string) =>

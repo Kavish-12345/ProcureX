@@ -21,6 +21,7 @@ export interface Product {
     name: string;
     businessName: string;
   };
+  totalValue: number;
 }
 
 export interface OrderItem {

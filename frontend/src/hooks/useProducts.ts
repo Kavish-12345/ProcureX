@@ -2,11 +2,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { productsApi } from '@/api/products';
 
 // Supplier: get their own products
-export function useMyProducts() {
-    return useQuery({
-        queryKey: ['products', 'mine'],
-        queryFn: () => productsApi.getMyProducts().then((res) => res.data),
-    });
+export function useMyProducts(params?: { page?: number; limit?: number; search?: string }) {
+  return useQuery({
+    queryKey: ['products', 'mine', params],
+    queryFn: () => productsApi.getMyProducts(params).then((res) => res.data),
+    placeholderData: (previousData) => previousData, // keep old page visible while fetching next
+  });
 }
 
 // Anyone: get a single product by id
