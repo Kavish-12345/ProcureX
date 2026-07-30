@@ -30,6 +30,19 @@ export function useCreateProduct() {
     });
 }
 
+// Anyone: get products belonging to a specific supplier
+export function useSupplierProducts(
+  supplierId: string,
+  params?: { page?: number; limit?: number; search?: string }
+) {
+  return useQuery({
+    queryKey: ['products', 'supplier', supplierId, params],
+    queryFn: () => productsApi.getBySupplier(supplierId, params).then((res) => res.data),
+    enabled: !!supplierId,
+    placeholderData: (previousData) => previousData, // keep old page visible while fetching next
+  });
+}
+
 // Supplier: update their product
 export function useUpdateProduct() {
     const queryClient = useQueryClient();

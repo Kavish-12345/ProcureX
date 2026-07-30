@@ -3,6 +3,7 @@ import {
   createProduct,
   getMyProducts,
   getProductById,
+  getProductsBySupplier,
   updateProduct,
   deleteProduct,
 } from '../controllers/product.controller.js';
@@ -11,16 +12,16 @@ import { requireRole } from '../middleware/requireRole.js';
 import { validate } from '../middleware/validate.js';
 import { createProductSchema, updateProductSchema } from '../schemas/product.schema.js';
 
-const router = Router(); 
+const router = Router();
 
-// Public route requiring no auth 
+// Public routes requiring no auth
+router.get('/supplier/:supplierId', getProductsBySupplier);
 router.get('/:id', getProductById);
 
-// Supplier authenticated routes 
+// Supplier authenticated routes
 router.post('/', requireAuth, requireRole('SUPPLIER'), validate(createProductSchema), createProduct);
 router.get('/', requireAuth, requireRole('SUPPLIER'), getMyProducts);
 router.patch('/:id', requireAuth, requireRole('SUPPLIER'), validate(updateProductSchema), updateProduct);
 router.delete('/:id', requireAuth, requireRole('SUPPLIER'), deleteProduct);
 
 export default router;
-

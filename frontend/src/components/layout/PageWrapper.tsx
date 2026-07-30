@@ -8,7 +8,7 @@ export function PageWrapper({ children }: { children: ReactNode }) {
             <Sidebar />
             <div className="flex flex-1 flex-col overflow-hidden">
                 <Navbar />
-                <main className="flex-1 overflow-y-auto px-8 py-6">{children}</main>
+                <main className="scrollbar-hidden flex-1 overflow-y-auto px-8 py-6">{children}</main>
             </div>
         </div>
     );

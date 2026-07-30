@@ -39,6 +39,10 @@ export const productsApi = {
     getMyProducts: (params?: GetProductsParams) =>
         client.get<ProductsResponse>('/products', { params }),
 
+     // Anyone: get a supplier's products (public catalog)
+    getBySupplier: (supplierId: string, params?: GetProductsParams) =>
+        client.get<ProductsResponse>(`/products/supplier/${supplierId}`, { params }),
+
     // Anyone: get a single product by id
     getById: (id: string) =>
         client.get<ProductResponse>(`/products/${id}`),

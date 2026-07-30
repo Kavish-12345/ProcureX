@@ -32,18 +32,20 @@ export function useUpdateOrderStatus() {
 }
 
 // Retailer: get their own orders
-export function useMyOrdersAsRetailer() {
+export function useMyOrdersAsRetailer(params?: Parameters<typeof ordersApi.getMyOrdersAsRetailer>[0]) {
     return useQuery({
-        queryKey: ['orders', 'retailer'],
-        queryFn: () => ordersApi.getMyOrdersAsRetailer().then((res) => res.data),
+        queryKey: ['orders', 'retailer', params],
+        queryFn: () => ordersApi.getMyOrdersAsRetailer(params).then((res) => res.data),
+        placeholderData: (previousData) => previousData,
     });
 }
 
 // Supplier: get their own orders
-export function useMyOrdersAsSupplier() {
+export function useMyOrdersAsSupplier(params?: Parameters<typeof ordersApi.getMyOrdersAsSupplier>[0]) {
     return useQuery({
-        queryKey: ['orders', 'supplier'],
-        queryFn: () => ordersApi.getMyOrdersAsSupplier().then((res) => res.data),
+        queryKey: ['orders', 'supplier', params],
+        queryFn: () => ordersApi.getMyOrdersAsSupplier(params).then((res) => res.data),
+        placeholderData: (previousData) => previousData,
     });
 }
 

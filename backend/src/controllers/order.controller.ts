@@ -40,7 +40,7 @@ export async function createOrder(req: Request, res: Response) {
       // Calculate total order amount
       let totalAmount = 0;
       const orderItemsData = data.items.map((item) => {
-        const product = products.find((p) => p.id === data.supplierId)!;
+        const product = products.find((p) => p.id === item.productId)!;
         const itemTotal = Number(product.unitPrice) * item.quantity;
         totalAmount += itemTotal;
 
@@ -56,13 +56,11 @@ export async function createOrder(req: Request, res: Response) {
           retailerId,
           supplierId: data.supplierId,
           totalAmount,
-          items: {
-            create: orderItemsData,
-          },
-          include: {
-            items: { include: { product: true } },
-          },
-        }
+          items: { create: orderItemsData },
+        },
+        include: {
+          items: { include: { product: true } },
+        },
       });
 
       return newOrder;
@@ -200,33 +198,62 @@ export async function updateOrderStatus(req: Request, res: Response) {
   }
 }
 
+const ORDER_STATUSES = ['PENDING', 'CONFIRMED', 'SHIPPED', 'DELIVERED', 'CANCELLED'];
+
 export async function getMyOrdersAsRetailer(req: Request, res: Response) {
   try {
     const retailerId = req.user!.userId;
-    const orders = await prisma.order.findMany({
-      where: { retailerId },
-      orderBy: { createdAt: 'desc' },
-      include: {
-        supplier: {
-          select: {
-            id: true, name: true, businessName: true
+    const page = Math.max(parseInt(req.query.page as string) || 1, 1);
+    const limit = Math.min(parseInt(req.query.limit as string) || 10, 100);
+    const status = req.query.status as string | undefined;
+    const search = (req.query.search as string)?.trim();
+
+    const where = {
+      retailerId,
+      ...(status && ORDER_STATUSES.includes(status) && { status: status as any }),
+      ...(search && {
+        supplier: { businessName: { contains: search, mode: 'insensitive' as const } },
+      }),
+    };
+
+    const [orders, total] = await Promise.all([
+      prisma.order.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+        include: {
+          supplier: {
+            select: {
+              id: true, name: true, businessName: true
+            },
           },
-        },
-        items: {
-          include: {
-            product: {
-              select: {
-                id: true, name: true, unit: true
+          items: {
+            include: {
+              product: {
+                select: {
+                  id: true, name: true, unit: true
+                }
               }
             }
-          }
-        },
-        ledgerEntry: {
-          select: { amount: true, dueDate: true, isPaid: true, paidAt: true },
-        },
-      }
+          },
+          ledgerEntry: {
+            select: { amount: true, dueDate: true, isPaid: true, paidAt: true },
+          },
+        }
+      }),
+      prisma.order.count({ where }),
+    ]);
+
+    return res.status(200).json({
+      orders,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
     });
-    return res.status(200).json({ orders });
   } catch (error) {
     console.error('Get retailer orders error:', error);
     return res.status(500).json({ message: 'Something went wrong while fetching orders' });
@@ -236,30 +263,57 @@ export async function getMyOrdersAsRetailer(req: Request, res: Response) {
 export async function getMyOrdersAsSupplier(req: Request, res: Response) {
   try {
     const supplierId = req.user!.userId;
-    const orders = await prisma.order.findMany({
-      where: { supplierId },
-      orderBy: { createdAt: 'desc' },
-      include: {
-        retailer: {
-          select: {
-            id: true, name: true, businessName: true
-          }
-        },
-        items: {
-          include: {
-            product: {
-              select: {
-                id: true, name: true, unit: true
+    const page = Math.max(parseInt(req.query.page as string) || 1, 1);
+    const limit = Math.min(parseInt(req.query.limit as string) || 10, 100);
+    const status = req.query.status as string | undefined;
+    const search = (req.query.search as string)?.trim();
+
+    const where = {
+      supplierId,
+      ...(status && ORDER_STATUSES.includes(status) && { status: status as any }),
+      ...(search && {
+        retailer: { businessName: { contains: search, mode: 'insensitive' as const } },
+      }),
+    };
+
+    const [orders, total] = await Promise.all([
+      prisma.order.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+        include: {
+          retailer: {
+            select: {
+              id: true, name: true, businessName: true
+            }
+          },
+          items: {
+            include: {
+              product: {
+                select: {
+                  id: true, name: true, unit: true
+                }
               }
             }
-          }
-        },
-        ledgerEntry: {
-          select: { amount: true, dueDate: true, isPaid: true, paidAt: true },
-        },
-      }
+          },
+          ledgerEntry: {
+            select: { amount: true, dueDate: true, isPaid: true, paidAt: true },
+          },
+        }
+      }),
+      prisma.order.count({ where }),
+    ]);
+
+    return res.status(200).json({
+      orders,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
     });
-    return res.status(200).json({ orders });
   } catch (error) {
     console.error('Get supplier orders error:', error);
     return res.status(500).json({ message: 'Something went wrong while fetching orders' });

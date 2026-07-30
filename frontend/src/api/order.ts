@@ -18,8 +18,23 @@ interface UpdateOrderStatusData {
     dueDate?: string; // required by backend only when status === 'CONFIRMED'
 }
 
+interface GetOrdersParams {
+    page?: number;
+    limit?: number;
+    status?: OrderStatus;
+    search?: string;
+}
+
+interface PaginationInfo {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+}
+
 interface OrdersResponse {
     orders: Order[];
+    pagination: PaginationInfo;
 }
 
 interface OrderResponse {
@@ -36,12 +51,12 @@ export const ordersApi = {
         client.patch<{ message: string; order: Order }>(`/orders/${id}/status`, data),
 
     // Retailer: get their own orders
-    getMyOrdersAsRetailer: () =>
-        client.get<OrdersResponse>('/orders/retailer/me'),
+    getMyOrdersAsRetailer: (params?: GetOrdersParams) =>
+        client.get<OrdersResponse>('/orders/retailer/me', { params }),
 
     // Supplier: get their own orders
-    getMyOrdersAsSupplier: () =>
-        client.get<OrdersResponse>('/orders/supplier/me'),
+    getMyOrdersAsSupplier: (params?: GetOrdersParams) =>
+        client.get<OrdersResponse>('/orders/supplier/me', { params }),
 
     // Either party on the order: get by id
     getById: (id: string) =>

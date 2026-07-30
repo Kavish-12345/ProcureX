@@ -168,3 +168,51 @@ export async function deleteProduct(req: Request, res: Response) {
     return res.status(500).json({ message: 'Something went wrong while deleting the product' });
   }
 }
+
+export async function getProductsBySupplier(req: Request, res: Response) {
+  try {
+    const { supplierId } = req.params;
+    if (!supplierId || typeof supplierId !== 'string') {
+      return res.status(400).json({ message: 'Invalid supplier id' });
+    }
+
+    const page = Math.max(parseInt(req.query.page as string) || 1, 1);
+    const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
+    const search = (req.query.search as string)?.trim();
+
+    const where = {
+      supplierId,
+      ...(search && {
+        name: { contains: search, mode: 'insensitive' as const },
+      }),
+    };
+
+    const [products, total] = await Promise.all([
+      prisma.product.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.product.count({ where }),
+    ]);
+
+    const productsWithTotal = products.map((p) => ({
+      ...p,
+      totalValue: Number(p.unitPrice) * p.stock,
+    }));
+
+    return res.status(200).json({
+      products: productsWithTotal,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    });
+  } catch (error) {
+    console.error('Get products by supplier error:', error);
+    return res.status(500).json({ message: 'Something went wrong while fetching products' });
+  }
+}

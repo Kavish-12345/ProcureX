@@ -7,6 +7,30 @@ export interface User {
   phone: string;
 }
 
+export interface Supplier {
+  id: string;
+  name: string;
+  businessName: string;
+  phone: string;
+  createdAt: string;
+}
+
+export interface SupplierSummary {
+  id: string;
+  name: string;
+  businessName: string;
+  phone: string;
+}
+
+export interface SupplierRetailerConnection {
+  id: string;
+  supplierId: string;
+  retailerId: string;
+  createdAt: string;
+  supplier?: SupplierSummary;
+  retailer?: SupplierSummary;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -66,25 +90,6 @@ export interface Order {
   };
   items?: OrderItem[];
   ledgerEntry?: LedgerEntry;
-}
-
-export interface SupplierRetailerConnection {
-  id: string;
-  supplierId: string;
-  retailerId: string;
-  createdAt: string;
-  supplier?: {
-    id: string;
-    name: string;
-    businessName: string;
-    phone: string;
-  };
-  retailer?: {
-    id: string;
-    name: string;
-    businessName: string;
-    phone: string;
-  };
 }
 
 export interface ApiSuccess<T> {

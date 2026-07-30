@@ -15,7 +15,7 @@ interface BrowseSuppliersResponse {
 export const discoveryApi = {
     // Anyone: browse/search suppliers
     browseSuppliers: (search?: string) =>
-        client.get<BrowseSuppliersResponse>('/discovery/suppliers', {
+        client.get<BrowseSuppliersResponse>('/suppliers', {
             params: search ? { search } : undefined,
         }),
 };
