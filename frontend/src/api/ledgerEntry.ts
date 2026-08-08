@@ -1,25 +1,17 @@
 import client from './client';
 import type { LedgerEntry } from '@/types';
 
-interface DueEntry extends LedgerEntry {
+export interface LedgerEntryWithOrder extends LedgerEntry {
     order: {
         id: string;
         totalAmount: number;
         createdAt: string;
-        supplier: {
+        supplier?: {
             id: string;
             name: string;
             businessName: string;
         };
-    };
-}
-
-interface ReceivableEntry extends LedgerEntry {
-    order: {
-        id: string;
-        totalAmount: number;
-        createdAt: string;
-        retailer: {
+        retailer?: {
             id: string;
             name: string;
             businessName: string;
@@ -28,11 +20,11 @@ interface ReceivableEntry extends LedgerEntry {
 }
 
 interface DuesResponse {
-    entries: DueEntry[];
+    entries: LedgerEntryWithOrder[];
 }
 
 interface ReceivablesResponse {
-    entries: ReceivableEntry[];
+    entries: LedgerEntryWithOrder[];
 }
 
 interface MarkPaidData {
