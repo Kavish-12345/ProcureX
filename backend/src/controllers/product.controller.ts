@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import prisma from '../lib/prisma.js';
+import logger from '../lib/logger.js';
 import type { CreateProductInput, UpdateProductInput } from '../schemas/product.schema.js';
 
 export async function createProduct (req: Request, res: Response){
@@ -23,7 +24,7 @@ export async function createProduct (req: Request, res: Response){
       product,
     });
     } catch (error) {
-    console.error('Create product error:', error);
+    logger.error('Create product error:', error);
     return res.status(500).json({ message: 'Something went wrong while creating the product' });
     }
 }
@@ -67,7 +68,7 @@ export async function getMyProducts(req: Request, res: Response) {
       },
     });
   } catch (error) {
-    console.error('Get my products error:', error);
+    logger.error('Get my products error:', error);
     return res.status(500).json({ message: 'Something went wrong while fetching products' });
   }
 }
@@ -100,7 +101,7 @@ export async function getProductById(req: Request, res: Response) {
 
     return res.status(200).json({ product: productWithTotal });
   } catch (error) {
-    console.error('Get product by id error:', error);
+    logger.error('Get product by id error:', error);
     return res.status(500).json({ message: 'Something went wrong while fetching the product' });
   }
 }
@@ -136,7 +137,7 @@ export async function updateProduct(req: Request, res:Response){
       product: updatedProduct,
     });
   } catch (error) {
-    console.error('Update product error:', error);
+    logger.error('Update product error:', error);
     return res.status(500).json({ message: 'Something went wrong while updating the product' });
 }
 }
@@ -164,7 +165,7 @@ export async function deleteProduct(req: Request, res: Response) {
     });
     return res.status(200).json({ message: 'Product deleted successfully' });
     } catch (error) {
-    console.error('Delete product error:', error);
+    logger.error('Delete product error:', error);
     return res.status(500).json({ message: 'Something went wrong while deleting the product' });
   }
 }
@@ -212,7 +213,7 @@ export async function getProductsBySupplier(req: Request, res: Response) {
       },
     });
   } catch (error) {
-    console.error('Get products by supplier error:', error);
+    logger.error('Get products by supplier error:', error);
     return res.status(500).json({ message: 'Something went wrong while fetching products' });
   }
 }

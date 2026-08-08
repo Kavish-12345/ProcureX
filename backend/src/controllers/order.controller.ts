@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import prisma from "../lib/prisma.js";
+import logger from "../lib/logger.js";
 import type { CreateOrderInput, UpdateOrderStatusInput } from "../schemas/order.schema.js";
 import { create } from "node:domain";
 
@@ -72,7 +73,7 @@ export async function createOrder(req: Request, res: Response) {
       order,
     });
   } catch (error) {
-    console.error('Create order error:', error);
+    logger.error('Create order error:', error);
     const message = error instanceof Error ? error.message : 'Something went wrong while placing the order';
     return res.status(400).json({ message });
   }
@@ -192,7 +193,7 @@ export async function updateOrderStatus(req: Request, res: Response) {
       order,
     });
   } catch (error) {
-    console.error('Update order status error:', error);
+    logger.error('Update order status error:', error);
     const message = error instanceof Error ? error.message : 'Something went wrong while updating order status';
     return res.status(400).json({ message });
   }
@@ -255,7 +256,7 @@ export async function getMyOrdersAsRetailer(req: Request, res: Response) {
       },
     });
   } catch (error) {
-    console.error('Get retailer orders error:', error);
+    logger.error('Get retailer orders error:', error);
     return res.status(500).json({ message: 'Something went wrong while fetching orders' });
   }
 }
@@ -315,7 +316,7 @@ export async function getMyOrdersAsSupplier(req: Request, res: Response) {
       },
     });
   } catch (error) {
-    console.error('Get supplier orders error:', error);
+    logger.error('Get supplier orders error:', error);
     return res.status(500).json({ message: 'Something went wrong while fetching orders' });
   }
 }
@@ -366,7 +367,7 @@ export async function getOrderById(req: Request, res: Response) {
     }
     return res.status(200).json({ order });
   } catch (error) {
-    console.error('Get order by id error:', error);
+    logger.error('Get order by id error:', error);
     return res.status(500).json({ message: 'Something went wrong while fetching the order' });
   }
 }

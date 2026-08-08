@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import prisma from '../lib/prisma.js';
+import logger from '../lib/logger.js';
 import type { CreateConnectionInput } from '../schemas/connection.schema.js';
 
 // Connection creation 
@@ -43,7 +44,7 @@ export async function createConnection(req: Request, res: Response) {
             connection,
         });
     } catch (error) {
-        console.error('Create connection error:', error);
+        logger.error('Create connection error:', error);
         return res.status(500).json({ message: 'Something went wrong while creating connection' });
     }
 }
@@ -64,7 +65,7 @@ export async function getMyConnections(req: Request, res: Response) {
 
         return res.status(200).json({ connections });
     } catch (error) {
-        console.error('Get connections error:', error);
+        logger.error('Get connections error:', error);
         return res.status(500).json({ message: 'Something went wrong while fetching connections' });
     }
 }

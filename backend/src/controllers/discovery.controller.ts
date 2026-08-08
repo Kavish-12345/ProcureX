@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import prisma from '../lib/prisma.js';
+import logger from '../lib/logger.js';
 
 export async function browseSuppliers(req: Request, res: Response) {
     try {
@@ -29,7 +30,7 @@ export async function browseSuppliers(req: Request, res: Response) {
 
         return res.status(200).json({ suppliers });
     } catch (error) {
-        console.error('Browse suppliers error:', error);
+        logger.error('Browse suppliers error:', error);
         return res.status(500).json({ message: 'Something went wrong while fetching suppliers' });
     }
 }

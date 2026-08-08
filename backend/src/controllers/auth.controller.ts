@@ -1,5 +1,6 @@
 import type {Request , Response , NextFunction} from 'express'
 import prisma from '../lib/prisma.js';
+import logger from '../lib/logger.js';
 import { hashPassword, comparePassword } from '../utils/password.js';
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from '../utils/jwt.js';
 import type { SignupInput, LoginInput } from '../schemas/auth.schema.js';
@@ -69,7 +70,7 @@ export async function signup(req: Request, res:Response){
       },
     });
     } catch (error) {
-       console.error('Signup error:', error);
+       logger.error('Signup error:', error);
        return res.status(500).json({ message: 'Something went wrong during signup' });
     }
 }
@@ -106,7 +107,7 @@ export async function login(req: Request, res: Response) {
       },
     });
     } catch(error) {
-        console.error('Login error:', error);
+        logger.error('Login error:', error);
         return res.status(500).json({ message: 'Something went wrong during login' });
     }
 }
@@ -143,7 +144,7 @@ export async function refresh(req: Request, res: Response){
 
      return res.status(200).json({ message: 'Token refreshed' });
     } catch (error) {
-      console.error('Refresh token error:', error);
+      logger.error('Refresh token error:', error);
       return res.status(500).json({ message: 'Something went wrong while refreshing token' });
     }
 }
@@ -153,7 +154,7 @@ export async function logout(_req: Request, res: Response) {
       clearAuthCookies(res);
       return res.status(200).json({ message: 'Logged out successfully' });
     } catch (error) {
-      console.error('Logout error:', error);
+      logger.error('Logout error:', error);
       return res.status(500).json({ message: 'Something went wrong during logout' });
   }
 }
