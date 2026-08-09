@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import prisma from '../lib/prisma.js';
+import logger from '../lib/logger.js';
 import type { MarkPaidInput } from '../schemas/ledger.schema.js';
 
 // Retailer :  see what they owe to each supplier
@@ -29,7 +30,7 @@ export async function getMyDues(req: Request, res: Response) {
         });
         return res.status(200).json({ entries });
     } catch (error) {
-        console.error('Get dues error:', error);
+        logger.error('Get dues error:', error);
         return res.status(500).json({ message: 'Something went wrong while fetching dues' });
     }
 }
@@ -60,7 +61,7 @@ export async function getMyReceivables(req: Request, res: Response) {
 
         return res.status(200).json({ entries });
     } catch (error) {
-        console.error('Get receivables error:', error);
+        logger.error('Get receivables error:', error);
         return res.status(500).json({ message: 'Something went wrong while fetching receivables' });
     }
 }
@@ -111,7 +112,7 @@ export async function markAsPaid(req: Request, res: Response) {
             entry: updatedEntry,
         });
     } catch (error) {
-        console.error('Mark as paid error:', error);
+        logger.error('Mark as paid error:', error);
         return res.status(500).json({ message: 'Something went wrong while updating ledger entry' });
     }
 }

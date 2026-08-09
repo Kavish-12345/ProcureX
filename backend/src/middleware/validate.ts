@@ -8,7 +8,7 @@ export function validate(schema: z.ZodType) {
     const result = schema.safeParse(req.body);
 
     if(!result.success){
-        return res.json({
+        return res.status(400).json({
             message: 'Validation Failed',
             errors: z.treeifyError(result.error),
         });
