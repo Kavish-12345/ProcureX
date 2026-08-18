@@ -1,6 +1,9 @@
 import type {Request , Response , NextFunction} from 'express'
+import prismaClientPkg from '@prisma/client';
 import prisma from '../lib/prisma.js';
 import logger from '../lib/logger.js';
+
+const { Prisma } = prismaClientPkg;
 import { hashPassword, comparePassword } from '../utils/password.js';
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from '../utils/jwt.js';
 import type { SignupInput, LoginInput } from '../schemas/auth.schema.js';
@@ -70,6 +73,12 @@ export async function signup(req: Request, res:Response){
       },
     });
     } catch (error) {
+       // The findUnique check above is just a fast-path for the common case — it's
+       // not atomic, so two concurrent signups with the same email can both pass it.
+       // The unique constraint on email is the real guard; this catches its violation.
+       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+         return res.status(409).json({ message: 'Email already registered' });
+       }
        logger.error('Signup error:', error);
        return res.status(500).json({ message: 'Something went wrong during signup' });
     }
