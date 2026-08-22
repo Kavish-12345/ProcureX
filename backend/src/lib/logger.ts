@@ -34,6 +34,7 @@ const logger = winston.createLogger({
   // 'http' in prod keeps request logs but drops debug noise; 'debug' in dev shows everything.
   level: config.nodeEnv === 'production' ? 'http' : 'debug',
   format: config.nodeEnv === 'production' ? prodFormat : devFormat,
+  silent: config.nodeEnv === 'test',
   transports: [
     new winston.transports.Console(),
     new winston.transports.File({ filename: 'logs/error.log', level: 'error' }),
