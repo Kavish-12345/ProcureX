@@ -7,7 +7,6 @@ export const Route = createFileRoute("/auth/login")({
   component: LoginPage,
 });
 
-const brandName = "ProcureX";
 
 function extractErrors(error: unknown) {
   if (error && typeof error === "object" && "response" in error) {

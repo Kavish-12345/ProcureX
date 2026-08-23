@@ -40,8 +40,6 @@ const flow: FlowEntry[] = [
 const brandName = 'ProcureX'
 
 function LandingPage() {
-  const year = new Date().getFullYear()
-
   return (
     <div className="h-screen overflow-hidden bg-white text-black">
       <SiteHeader />
