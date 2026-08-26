@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction  } from "express";
-import { verifyAccessToken } from "../utils/jwt.js";
+import { verifyAccessToken, isTokenRevoked } from "../utils/jwt.js";
 import type { JwtPayload } from '../utils/jwt.js';
 import type { Jwt } from "jsonwebtoken";
 
@@ -13,14 +13,19 @@ declare global{
 }
 
 // Verification of the user using the access token stored in the cookies.
-export function requireAuth(req: Request, res:Response, next: NextFunction) {
+export async function requireAuth(req: Request, res:Response, next: NextFunction) {
     try{
-        const token = req.cookies?.accessToken as string | undefined; 
+        const token = req.cookies?.accessToken as string | undefined;
         if (!token) {
            return res.status(401).json({ message: 'Not authenticated' });
-        }   
+        }
 
-        const payload = verifyAccessToken(token); 
+        const payload = verifyAccessToken(token);
+
+        if (await isTokenRevoked(token)) {
+            return res.status(401).json({ message: 'Token has been revoked' });
+        }
+
         req.user = payload;
 
         next();

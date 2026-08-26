@@ -1,4 +1,5 @@
 import prisma from '../../lib/prisma.js';
+import redis from '../../lib/redis.js';
 
 // Runs after the test framework is installed (Jest `setupFilesAfterEnv`), so
 // `beforeEach`/`afterAll` are available as globals here.
@@ -14,4 +15,5 @@ beforeEach(async () => {
 
 afterAll(async () => {
   await prisma.$disconnect();
+  await redis.quit();
 });

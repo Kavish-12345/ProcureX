@@ -14,4 +14,5 @@ export const config = {
     jwtSecret: requireEnv('JWT_SECRET'),
     databaseUrl: requireEnv('DATABASE_URL'),
     frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5173',
+    redisUrl: process.env.REDIS_URL || 'redis://localhost:6379',
 } as const;

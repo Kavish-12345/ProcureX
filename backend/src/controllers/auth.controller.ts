@@ -5,7 +5,7 @@ import logger from '../lib/logger.js';
 
 const { Prisma } = prismaClientPkg;
 import { hashPassword, comparePassword } from '../utils/password.js';
-import { signAccessToken, signRefreshToken, verifyRefreshToken } from '../utils/jwt.js';
+import { signAccessToken, signRefreshToken, verifyRefreshToken, revokeToken, isTokenRevoked } from '../utils/jwt.js';
 import type { SignupInput, LoginInput } from '../schemas/auth.schema.js';
 
 const ACCESS_TOKEN_MAX_AGE = 15 * 60 * 1000; // 15 minutes
@@ -129,12 +129,17 @@ export async function refresh(req: Request, res: Response){
             return res.status(401).json({ message: 'No refresh token provided' });
         }
 
-        let payload; 
+        let payload;
         try{
             payload = verifyRefreshToken(token);
         } catch {
             clearAuthCookies(res);
             return res.status(401).json({ message: 'Invalid or expired refresh token' });
+        }
+
+        if (await isTokenRevoked(token)) {
+            clearAuthCookies(res);
+            return res.status(401).json({ message: 'Refresh token has been revoked' });
         }
 
         const user = await prisma.user.findUnique({
@@ -158,8 +163,14 @@ export async function refresh(req: Request, res: Response){
     }
 }
 
-export async function logout(_req: Request, res: Response) {
+export async function logout(req: Request, res: Response) {
     try {
+      const accessToken = req.cookies?.accessToken as string | undefined;
+      const refreshToken = req.cookies?.refreshToken as string | undefined;
+
+      if (accessToken) await revokeToken(accessToken);
+      if (refreshToken) await revokeToken(refreshToken);
+
       clearAuthCookies(res);
       return res.status(200).json({ message: 'Logged out successfully' });
     } catch (error) {
