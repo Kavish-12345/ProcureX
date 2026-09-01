@@ -1,6 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router'
 import toast from 'react-hot-toast'
 import { PageWrapper } from '@/components/layout/PageWrapper'
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
+import { StatusBadge } from '@/components/shared/StatusBadge'
+import { Button } from '@/components/ui/button'
 import { useAuthStore } from '@/store/authStore'
 import { useMyDues, useMyReceivables, useMarkAsPaid } from '@/hooks/useLedger'
 
@@ -75,7 +78,7 @@ function LedgerPage() {
 
       <div className="mt-6">
         {isLoading ? (
-          <p className="text-sm text-black/50">Loading…</p>
+          <LoadingSpinner label="Loading…" />
         ) : entries.length === 0 ? (
           <p className="text-sm text-black/50">{isSupplier ? 'No receivables yet.' : 'No dues yet.'}</p>
         ) : (
@@ -96,17 +99,10 @@ function LedgerPage() {
                     </div>
                     <div className="flex items-center gap-3">
                       <p className="font-serif text-lg text-black">{formatCurrency(entry.amount)}</p>
-                      <span
-                        className={`inline-block border px-2.5 py-1 font-mono text-[10px] font-semibold uppercase tracking-wide ${
-                          entry.isPaid
-                            ? 'border-black bg-black text-white'
-                            : isOverdue
-                              ? 'border-black text-black'
-                              : 'border-black/30 text-black/60'
-                        }`}
-                      >
-                        {entry.isPaid ? 'Paid' : isOverdue ? 'Overdue' : 'Unpaid'}
-                      </span>
+                      <StatusBadge
+                        label={entry.isPaid ? 'Paid' : isOverdue ? 'Overdue' : 'Unpaid'}
+                        tone={entry.isPaid ? 'filled' : isOverdue ? 'active' : 'neutral'}
+                      />
                     </div>
                   </div>
 
@@ -116,13 +112,9 @@ function LedgerPage() {
                     </p>
 
                     {isSupplier && !entry.isPaid && (
-                      <button
-                        onClick={() => handleMarkAsPaid(entry.id)}
-                        disabled={isMarking}
-                        className="border border-black bg-black px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-white transition-colors hover:bg-white hover:text-black disabled:opacity-50"
-                      >
+                      <Button disabled={isMarking} onClick={() => handleMarkAsPaid(entry.id)}>
                         {isMarking ? 'Marking…' : 'Mark as paid'}
-                      </button>
+                      </Button>
                     )}
                   </div>
                 </div>

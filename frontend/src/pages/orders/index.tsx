@@ -2,9 +2,13 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
 import { PageWrapper } from '@/components/layout/PageWrapper'
+import { SearchInput } from '@/components/shared/SearchInput'
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
+import { StatusBadge } from '@/components/shared/StatusBadge'
+import { Button } from '@/components/ui/button'
 import { useAuthStore } from '@/store/authStore'
 import { useMyOrdersAsRetailer, useMyOrdersAsSupplier, useUpdateOrderStatus } from '@/hooks/useOrder'
-import type { Order } from '@/types'
+import { orderStatusTone } from '@/lib/orderStatusStyles'
 
 export const Route = createFileRoute('/orders/')({
   component: OrdersPage,
@@ -19,21 +23,6 @@ function extractMessage(error: unknown) {
     return (error as any).response?.data?.message ?? 'Something went wrong.'
   }
   return 'Something went wrong.'
-}
-
-function StatusBadge({ status }: { status: Order['status'] }) {
-  const styles: Record<Order['status'], string> = {
-    PENDING: 'border-black/30 text-black/60',
-    CONFIRMED: 'border-black text-black',
-    SHIPPED: 'border-black bg-black/5 text-black',
-    DELIVERED: 'border-black bg-black text-white',
-    CANCELLED: 'border-black/20 text-black/30 line-through',
-  }
-  return (
-    <span className={`inline-block border px-2.5 py-1 font-mono text-[10px] font-semibold uppercase tracking-wide ${styles[status]}`}>
-      {status}
-    </span>
-  )
 }
 
 function OrdersPage() {
@@ -112,34 +101,11 @@ function OrdersPage() {
       </p>
 
       <div className="mt-6 flex flex-wrap items-center gap-3">
-        <div className="relative max-w-sm flex-1">
-          <svg
-            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-black/35"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35m1.35-5.65a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-          <input
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            placeholder={isSupplier ? 'Search by retailer name…' : 'Search by supplier name…'}
-            className="w-full border border-black/20 bg-white py-2.5 pl-9 pr-9 text-sm outline-none transition-colors focus:border-black"
-          />
-          {searchInput && (
-            <button
-              onClick={() => setSearchInput('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-black/35 transition-colors hover:text-black"
-              aria-label="Clear search"
-            >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          )}
-        </div>
+        <SearchInput
+          value={searchInput}
+          onChange={setSearchInput}
+          placeholder={isSupplier ? 'Search by retailer name…' : 'Search by supplier name…'}
+        />
 
         <select
           value={statusFilter}
@@ -156,7 +122,7 @@ function OrdersPage() {
 
       <div className="mt-4">
         {isLoading ? (
-          <p className="text-sm text-black/50">Loading orders…</p>
+          <LoadingSpinner label="Loading orders…" />
         ) : orders.length === 0 ? (
           <p className="text-sm text-black/50">
             {debouncedSearch
@@ -186,7 +152,7 @@ function OrdersPage() {
                     </div>
                     <div className="flex items-center gap-3">
                       <p className="font-serif text-lg text-black">₹{order.totalAmount}</p>
-                      <StatusBadge status={order.status} />
+                      <StatusBadge label={order.status} tone={orderStatusTone[order.status]} />
                     </div>
                   </div>
 
@@ -211,19 +177,14 @@ function OrdersPage() {
                       <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-black/10 pt-4">
                         {order.status === 'PENDING' && !isConfirming && (
                           <>
-                            <button
-                              onClick={() => setConfirmingId(order.id)}
-                              className="border border-black bg-black px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-white transition-colors hover:bg-white hover:text-black"
-                            >
-                              Confirm
-                            </button>
-                            <button
-                              onClick={() => handleTransition(order.id, 'CANCELLED')}
+                            <Button onClick={() => setConfirmingId(order.id)}>Confirm</Button>
+                            <Button
+                              variant="outline"
                               disabled={isPending}
-                              className="border border-black/30 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-black/60 transition-colors hover:border-black hover:text-black"
+                              onClick={() => handleTransition(order.id, 'CANCELLED')}
                             >
                               Cancel
-                            </button>
+                            </Button>
                           </>
                         )}
 
@@ -235,40 +196,28 @@ function OrdersPage() {
                               onChange={(e) => setDueDate(e.target.value)}
                               className="border border-black/20 px-3 py-1.5 text-[12px] outline-none focus:border-black"
                             />
-                            <button
-                              onClick={() => handleConfirm(order.id)}
-                              disabled={isPending}
-                              className="border border-black bg-black px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-white transition-colors hover:bg-white hover:text-black disabled:opacity-50"
-                            >
+                            <Button disabled={isPending} onClick={() => handleConfirm(order.id)}>
                               {isPending ? 'Confirming…' : 'Set due date & confirm'}
-                            </button>
-                            <button
+                            </Button>
+                            <Button
+                              variant="link"
                               onClick={() => { setConfirmingId(null); setDueDate('') }}
-                              className="text-[11px] text-black/40 underline"
                             >
                               Cancel
-                            </button>
+                            </Button>
                           </div>
                         )}
 
                         {order.status === 'CONFIRMED' && (
-                          <button
-                            onClick={() => handleTransition(order.id, 'SHIPPED')}
-                            disabled={isPending}
-                            className="border border-black bg-black px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-white transition-colors hover:bg-white hover:text-black disabled:opacity-50"
-                          >
+                          <Button disabled={isPending} onClick={() => handleTransition(order.id, 'SHIPPED')}>
                             Mark as shipped
-                          </button>
+                          </Button>
                         )}
 
                         {order.status === 'SHIPPED' && (
-                          <button
-                            onClick={() => handleTransition(order.id, 'DELIVERED')}
-                            disabled={isPending}
-                            className="border border-black bg-black px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-white transition-colors hover:bg-white hover:text-black disabled:opacity-50"
-                          >
+                          <Button disabled={isPending} onClick={() => handleTransition(order.id, 'DELIVERED')}>
                             Mark as delivered
-                          </button>
+                          </Button>
                         )}
                       </div>
                     )}

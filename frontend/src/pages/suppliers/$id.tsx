@@ -2,6 +2,9 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
 import { PageWrapper } from '@/components/layout/PageWrapper'
+import { SearchInput } from '@/components/shared/SearchInput'
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
+import { Button } from '@/components/ui/button'
 import { useSupplierProducts } from '@/hooks/useProducts'
 import { useCreateOrder } from '@/hooks/useOrder'
 import type { Product } from '@/types'
@@ -90,41 +93,14 @@ function SupplierDetailPage() {
         Select quantities and place your order.
       </p>
 
-      <div className="relative mt-6 max-w-sm">
-        <svg
-          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-black/35"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={2}
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35m1.35-5.65a7 7 0 11-14 0 7 7 0 0114 0z" />
-        </svg>
-        <input
-          value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
-          placeholder="Search products…"
-          className="w-full border border-black/20 bg-white py-2.5 pl-9 pr-9 text-sm outline-none transition-colors focus:border-black"
-        />
-        {searchInput && (
-          <button
-            onClick={() => setSearchInput('')}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-black/35 transition-colors hover:text-black"
-            aria-label="Clear search"
-          >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        )}
-      </div>
+      <SearchInput value={searchInput} onChange={setSearchInput} placeholder="Search products…" className="mt-6" />
 
       <div className="mt-4 grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
         {/* LEFT: product table */}
         <div className="min-w-0">
           <div>
             {isLoading ? (
-              <p className="text-sm text-black/50">Loading products…</p>
+              <LoadingSpinner label="Loading products…" />
             ) : products.length === 0 ? (
               <p className="text-sm text-black/50">
                 {debouncedSearch ? `No products match "${debouncedSearch}".` : 'This supplier has no products listed yet.'}
@@ -270,13 +246,9 @@ function SupplierDetailPage() {
                   </p>
                   <p className="mt-0.5 font-serif text-xl text-black">₹{cartTotal.toFixed(2)}</p>
 
-                  <button
-                    onClick={handlePlaceOrder}
-                    disabled={isPending}
-                    className="mt-4 w-full border border-black bg-black py-2.5 text-[11px] font-semibold uppercase tracking-wide text-white transition-colors hover:bg-white hover:text-black disabled:cursor-not-allowed disabled:opacity-50"
-                  >
+                  <Button size="lg" disabled={isPending} onClick={handlePlaceOrder} className="mt-4">
                     {isPending ? 'Placing…' : 'Place order'}
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}

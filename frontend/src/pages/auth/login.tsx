@@ -1,7 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import toast from "react-hot-toast";
+import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { useLogin } from "@/hooks/useAuth";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/auth/login")({
   component: LoginPage,
@@ -32,6 +34,7 @@ function extractErrors(error: unknown) {
 function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const { mutate: login, isPending, error } = useLogin();
 
   function handleSubmit(e: FormEvent) {
@@ -56,14 +59,13 @@ function LoginPage() {
     <div className="h-screen overflow-hidden bg-white text-black">
       <header className="border-b border-black">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-8 py-4">
-          <div className="flex items-center gap-4">
-            <Link
-              to={"/" as any}
-              className="hidden items-center gap-1.5 font-mono text-[11px] font-semibold uppercase tracking-wide text-black transition-colors hover:text-black/70 sm:flex"
-            >
-              ← Back to home
-            </Link>
-          </div>
+          <Link
+            to={"/" as any}
+            className="flex items-center gap-1.5 font-mono text-[11px] font-semibold uppercase tracking-wide text-black/50 transition-colors hover:text-black"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" strokeWidth={2} />
+            Back to home
+          </Link>
           <nav className="flex items-center gap-4 text-sm sm:gap-7">
             <span className="hidden text-black/50 sm:inline">New here?</span>
             <Link
@@ -145,15 +147,25 @@ function LoginPage() {
               >
                 Password
               </label>
-              <input
-                id="password"
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="mt-2 w-full border border-black/20 bg-white px-3.5 py-2.5 text-sm placeholder:text-black/30 outline-none transition-colors focus:border-black"
-                placeholder="••••••••"
-              />
+              <div className="relative mt-2">
+                <input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full border border-black/20 bg-white px-3.5 py-2.5 pr-10 text-sm placeholder:text-black/30 outline-none transition-colors focus:border-black"
+                  placeholder="••••••••"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((s) => !s)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  className="absolute top-1/2 right-3 -translate-y-1/2 text-black/35 transition-colors hover:text-black"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" strokeWidth={2} /> : <Eye className="h-4 w-4" strokeWidth={2} />}
+                </button>
+              </div>
               {fieldErrors.password && (
                 <p className="mt-1 text-[11px] text-red-600">
                   {fieldErrors.password[0]}
@@ -161,13 +173,9 @@ function LoginPage() {
               )}
             </div>
 
-            <button
-              type="submit"
-              disabled={isPending}
-              className="w-full border border-black bg-black py-3 text-sm font-semibold uppercase tracking-wide text-white transition-colors hover:bg-white hover:text-black disabled:cursor-not-allowed disabled:opacity-50"
-            >
+            <Button type="submit" size="lg" disabled={isPending}>
               {isPending ? "Logging in…" : "Log in"}
-            </button>
+            </Button>
           </form>
         </div>
       </main>

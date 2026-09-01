@@ -2,13 +2,14 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect, type FormEvent } from "react";
 import toast from "react-hot-toast";
 import { PageWrapper } from "@/components/layout/PageWrapper";
-import { DataTable } from "@/components/shared/DataTable";
+import { SearchInput } from "@/components/shared/SearchInput";
+import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
+import { Button } from "@/components/ui/button";
 import {
   useMyProducts,
   useCreateProduct,
   useDeleteProduct,
 } from "@/hooks/useProducts";
-import type { Product } from "@/types";
 
 export const Route = createFileRoute("/products/")({
   component: ProductsPage,
@@ -122,12 +123,9 @@ function ProductsPage() {
             Manage the catalog retailers see.
           </p>
         </div>
-        <button
-          onClick={() => setShowForm((s) => !s)}
-          className="border border-black bg-black px-5 py-2.5 text-xs font-semibold uppercase tracking-wide text-white transition-colors hover:bg-white hover:text-black"
-        >
+        <Button onClick={() => setShowForm((s) => !s)}>
           {showForm ? "Cancel" : "+ Add product"}
-        </button>
+        </Button>
       </div>
 
       {showForm && (
@@ -225,60 +223,15 @@ function ProductsPage() {
           </div>
 
           <div className="sm:col-span-2 lg:col-span-3">
-            <button
-              type="submit"
-              disabled={isPending}
-              className="w-full border border-black bg-black py-2.5 text-sm font-semibold uppercase tracking-wide text-white transition-colors hover:bg-white hover:text-black disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:px-8"
-            >
+            <Button type="submit" size="lg" disabled={isPending} className="sm:w-auto sm:px-8">
               {isPending ? "Adding…" : "Add product"}
-            </button>
+            </Button>
           </div>
         </form>
       )}
 
       <div className="mt-6 flex items-center justify-between gap-4">
-        <div className="relative max-w-sm flex-1">
-          <svg
-            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-black/35"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M21 21l-4.35-4.35m1.35-5.65a7 7 0 11-14 0 7 7 0 0114 0z"
-            />
-          </svg>
-          <input
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            placeholder="Search products by name…"
-            className="w-full border border-black/20 bg-white py-2.5 pl-9 pr-9 text-sm outline-none transition-colors focus:border-black"
-          />
-          {searchInput && (
-            <button
-              onClick={() => setSearchInput("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-black/35 hover:text-black transition-colors"
-              aria-label="Clear search"
-            >
-              <svg
-                className="h-4 w-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
-          )}
-        </div>
+        <SearchInput value={searchInput} onChange={setSearchInput} placeholder="Search products by name…" />
         {pagination && (
           <p className="whitespace-nowrap font-mono text-[11px] uppercase tracking-wide text-black/45">
             {pagination.total} product{pagination.total !== 1 ? "s" : ""}
@@ -288,38 +241,44 @@ function ProductsPage() {
 
       <div className="mt-4">
         {isLoading ? (
-          <p className="text-sm text-black/50">Loading products…</p>
+          <LoadingSpinner label="Loading products…" />
+        ) : products.length === 0 ? (
+          <p className="text-sm text-black/50">
+            {debouncedSearch
+              ? `No products match "${debouncedSearch}".`
+              : "No products yet. Add your first one above."}
+          </p>
         ) : (
-          <DataTable<Product>
-            data={products}
-            keyExtractor={(p: any) => p.id}
-            emptyMessage={
-              debouncedSearch
-                ? `No products match "${debouncedSearch}".`
-                : "No products yet. Add your first one above."
-            }
-            columns={[
-              { header: "Name", accessor: (p) => p.name },
-              { header: "Unit Price", accessor: (p) => `₹${p.unitPrice}` },
-              { header: "Unit", accessor: (p) => p.unit },
-              { header: "Stock", accessor: (p) => p.stock },
-              {
-                header: "Total value",
-                accessor: (p) => `₹${p.totalValue.toFixed(2)}`,
-              },
-              {
-                header: "Actions",
-                accessor: (p) => (
-                  <button
-                    onClick={() => handleDelete(p.id)}
-                    className="font-mono text-[11px] font-semibold uppercase tracking-wide text-red-600 hover:underline"
-                  >
-                    Delete
-                  </button>
-                ),
-              },
-            ]}
-          />
+          <div className="overflow-x-auto border border-black">
+            <table className="w-full text-sm">
+              <thead className="border-b border-black">
+                <tr>
+                  <th className="whitespace-nowrap px-3 py-2.5 text-left font-mono text-[10px] font-semibold uppercase tracking-wide text-black/50">Name</th>
+                  <th className="whitespace-nowrap px-3 py-2.5 text-left font-mono text-[10px] font-semibold uppercase tracking-wide text-black/50">Unit price</th>
+                  <th className="whitespace-nowrap px-3 py-2.5 text-left font-mono text-[10px] font-semibold uppercase tracking-wide text-black/50">Unit</th>
+                  <th className="whitespace-nowrap px-3 py-2.5 text-left font-mono text-[10px] font-semibold uppercase tracking-wide text-black/50">Stock</th>
+                  <th className="whitespace-nowrap px-3 py-2.5 text-right font-mono text-[10px] font-semibold uppercase tracking-wide text-black/50">Total value</th>
+                  <th className="whitespace-nowrap px-3 py-2.5 text-right font-mono text-[10px] font-semibold uppercase tracking-wide text-black/50">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-black/10">
+                {products.map((p) => (
+                  <tr key={p.id}>
+                    <td className="px-3 py-2.5 text-[13px] text-black">{p.name}</td>
+                    <td className="px-3 py-2.5 font-mono text-[12px] whitespace-nowrap text-black/80">₹{p.unitPrice}</td>
+                    <td className="px-3 py-2.5 text-[13px] text-black/60">{p.unit}</td>
+                    <td className="px-3 py-2.5 font-mono text-[12px] text-black/60">{p.stock}</td>
+                    <td className="px-3 py-2.5 text-right font-mono text-[12px] whitespace-nowrap text-black">₹{p.totalValue.toFixed(2)}</td>
+                    <td className="px-3 py-2.5 text-right">
+                      <Button variant="destructive" size="sm" onClick={() => handleDelete(p.id)}>
+                        Delete
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 

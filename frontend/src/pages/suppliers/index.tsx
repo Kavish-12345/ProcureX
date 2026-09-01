@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
 import { PageWrapper } from '@/components/layout/PageWrapper'
+import { SearchInput } from '@/components/shared/SearchInput'
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import { useBrowseSuppliers } from '@/hooks/useDiscovery'
 import { useMyConnections } from '@/hooks/useConnection'
 import type { Supplier, SupplierSummary } from '@/types'
@@ -82,26 +84,10 @@ function SuppliersPage() {
           Browse suppliers
         </p>
 
-        <div className="relative mt-3 max-w-sm">
-          <svg
-            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-black/35"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35m1.35-5.65a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-          <input
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            placeholder="Search suppliers…"
-            className="w-full border border-black/20 bg-white py-2.5 pl-9 pr-3 text-sm outline-none transition-colors focus:border-black"
-          />
-        </div>
+        <SearchInput value={searchInput} onChange={setSearchInput} placeholder="Search suppliers…" className="mt-3" />
 
         {isBrowseLoading ? (
-          <p className="mt-4 text-sm text-black/50">Loading suppliers…</p>
+          <LoadingSpinner label="Loading suppliers…" className="mt-4" />
         ) : browseSuppliers.length === 0 ? (
           <p className="mt-4 text-sm text-black/50">
             {debouncedSearch ? `No suppliers match "${debouncedSearch}".` : 'No more suppliers to browse.'}

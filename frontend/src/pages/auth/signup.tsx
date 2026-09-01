@@ -1,7 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import toast from "react-hot-toast";
+import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { useSignUp } from "@/hooks/useAuth";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/auth/signup")({
   component: SignupPage,
@@ -39,6 +41,7 @@ function SignupPage() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [role, setRole] = useState<Role>("RETAILER");
   const { mutate: signup, isPending, error } = useSignUp();
 
@@ -63,12 +66,13 @@ function SignupPage() {
   return (
     <div className="h-screen overflow-hidden bg-white text-black">
       <header className="border-b border-black">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-8 py-3">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-8 py-4">
           <Link
             to={"/" as any}
-            className="hidden items-center gap-1.5 font-mono text-[11px] font-semibold uppercase tracking-wide text-black transition-colors hover:text-black/70 sm:flex"
+            className="flex items-center gap-1.5 font-mono text-[11px] font-semibold uppercase tracking-wide text-black/50 transition-colors hover:text-black"
           >
-            ← Back to home
+            <ArrowLeft className="h-3.5 w-3.5" strokeWidth={2} />
+            Back to home
           </Link>
           <nav className="flex items-center gap-4 text-sm sm:gap-7">
             <span className="hidden text-black/50 sm:inline">
@@ -84,7 +88,7 @@ function SignupPage() {
         </div>
       </header>
 
-      <main className="mx-auto grid h-[calc(100vh-53px)] max-w-6xl grid-cols-1 gap-10 overflow-hidden px-8 py-5 md:grid-cols-[1fr_1px_1.2fr]">
+      <main className="mx-auto grid h-[calc(100vh-57px)] max-w-6xl grid-cols-1 gap-10 overflow-hidden px-8 py-5 md:grid-cols-[1fr_1px_1.2fr]">
         <div className="flex flex-col justify-center">
           <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-black/45">
             Open a new account
@@ -243,15 +247,25 @@ function SignupPage() {
               >
                 Password
               </label>
-              <input
-                id="password"
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="mt-1.5 w-full border border-black/20 bg-white px-3.5 py-2 text-sm placeholder:text-black/30 outline-none transition-colors focus:border-black"
-                placeholder="••••••••"
-              />
+              <div className="relative mt-1.5">
+                <input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full border border-black/20 bg-white px-3.5 py-2 pr-10 text-sm placeholder:text-black/30 outline-none transition-colors focus:border-black"
+                  placeholder="••••••••"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((s) => !s)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  className="absolute top-1/2 right-3 -translate-y-1/2 text-black/35 transition-colors hover:text-black"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" strokeWidth={2} /> : <Eye className="h-4 w-4" strokeWidth={2} />}
+                </button>
+              </div>
               {fieldErrors.password && (
                 <ul className="mt-1 space-y-0.5">
                   {fieldErrors.password.map((msg, i) => (
@@ -263,13 +277,9 @@ function SignupPage() {
               )}
             </div>
 
-            <button
-              type="submit"
-              disabled={isPending}
-              className="w-full border border-black bg-black py-2.5 text-sm font-semibold uppercase tracking-wide text-white transition-colors hover:bg-white hover:text-black disabled:cursor-not-allowed disabled:opacity-50"
-            >
+            <Button type="submit" size="lg" disabled={isPending}>
               {isPending ? "Opening account…" : "Open an account"}
-            </button>
+            </Button>
           </form>
         </div>
       </main>
