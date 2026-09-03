@@ -91,3 +91,112 @@ describe('Full order lifecycle', () => {
     expect(duesAfterPay.body.entries[0].isPaid).toBe(true);
   }, 15000);
 });
+
+describe('Retailer order cancellation', () => {
+  it('lets a retailer cancel their own pending order', async () => {
+    const supplierSignup = await request(app).post('/api/auth/signup').send(supplier);
+    const supplierCookie = extractCookie(supplierSignup);
+
+    const productRes = await request(app)
+      .post('/api/products')
+      .set('Cookie', supplierCookie)
+      .send({ name: 'Wheat (25kg)', unitPrice: 40, stock: 50, unit: 'bag' });
+    const productId = productRes.body.product.id;
+    const supplierId = supplierSignup.body.user.id;
+
+    const retailerSignup = await request(app).post('/api/auth/signup').send(retailer);
+    const retailerCookie = extractCookie(retailerSignup);
+
+    const orderRes = await request(app)
+      .post('/api/orders')
+      .set('Cookie', retailerCookie)
+      .send({ supplierId, items: [{ productId, quantity: 5 }] });
+    const orderId = orderRes.body.order.id;
+
+    const cancelRes = await request(app)
+      .patch(`/api/orders/${orderId}/status`)
+      .set('Cookie', retailerCookie)
+      .send({ status: 'CANCELLED' });
+    expect(cancelRes.status).toBe(200);
+    expect(cancelRes.body.order.status).toBe('CANCELLED');
+
+    // Stock was never decremented for a pending order, so it stays unchanged.
+    const productAfterCancel = await request(app).get(`/api/products/${productId}`);
+    expect(productAfterCancel.body.product.stock).toBe(50);
+  });
+
+  it('blocks a retailer from cancelling an order once confirmed', async () => {
+    const supplierSignup = await request(app)
+      .post('/api/auth/signup')
+      .send({ ...supplier, email: 'supplier2@example.com' });
+    const supplierCookie = extractCookie(supplierSignup);
+
+    const productRes = await request(app)
+      .post('/api/products')
+      .set('Cookie', supplierCookie)
+      .send({ name: 'Sugar (25kg)', unitPrice: 30, stock: 50, unit: 'bag' });
+    const productId = productRes.body.product.id;
+    const supplierId = supplierSignup.body.user.id;
+
+    const retailerSignup = await request(app)
+      .post('/api/auth/signup')
+      .send({ ...retailer, email: 'retailer2@example.com' });
+    const retailerCookie = extractCookie(retailerSignup);
+
+    const orderRes = await request(app)
+      .post('/api/orders')
+      .set('Cookie', retailerCookie)
+      .send({ supplierId, items: [{ productId, quantity: 5 }] });
+    const orderId = orderRes.body.order.id;
+
+    const dueDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+    await request(app)
+      .patch(`/api/orders/${orderId}/status`)
+      .set('Cookie', supplierCookie)
+      .send({ status: 'CONFIRMED', dueDate });
+
+    const cancelRes = await request(app)
+      .patch(`/api/orders/${orderId}/status`)
+      .set('Cookie', retailerCookie)
+      .send({ status: 'CANCELLED' });
+    expect(cancelRes.status).toBe(400);
+    expect(cancelRes.body.message).toMatch(/only cancel a pending order/i);
+  });
+
+  it('blocks a retailer from cancelling another retailer\'s order', async () => {
+    const supplierSignup = await request(app)
+      .post('/api/auth/signup')
+      .send({ ...supplier, email: 'supplier3@example.com' });
+    const supplierCookie = extractCookie(supplierSignup);
+
+    const productRes = await request(app)
+      .post('/api/products')
+      .set('Cookie', supplierCookie)
+      .send({ name: 'Salt (25kg)', unitPrice: 20, stock: 50, unit: 'bag' });
+    const productId = productRes.body.product.id;
+    const supplierId = supplierSignup.body.user.id;
+
+    const retailerSignup = await request(app)
+      .post('/api/auth/signup')
+      .send({ ...retailer, email: 'retailer3@example.com' });
+    const retailerCookie = extractCookie(retailerSignup);
+
+    const orderRes = await request(app)
+      .post('/api/orders')
+      .set('Cookie', retailerCookie)
+      .send({ supplierId, items: [{ productId, quantity: 5 }] });
+    const orderId = orderRes.body.order.id;
+
+    const otherRetailerSignup = await request(app)
+      .post('/api/auth/signup')
+      .send({ ...retailer, email: 'retailer4@example.com' });
+    const otherRetailerCookie = extractCookie(otherRetailerSignup);
+
+    const cancelRes = await request(app)
+      .patch(`/api/orders/${orderId}/status`)
+      .set('Cookie', otherRetailerCookie)
+      .send({ status: 'CANCELLED' });
+    expect(cancelRes.status).toBe(400);
+    expect(cancelRes.body.message).toMatch(/not authorized/i);
+  });
+});

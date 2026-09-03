@@ -16,8 +16,8 @@ const router = Router();
 // Retailer places an order
 router.post('/', requireAuth, requireRole('RETAILER'), validate(createOrderSchema), createOrder);
 
-// Supplier updates order status
-router.patch('/:id/status', requireAuth, requireRole('SUPPLIER'), validate(updateOrderStatusSchema), updateOrderStatus);
+// Supplier updates order status; retailer may cancel their own pending order
+router.patch('/:id/status', requireAuth, requireRole('SUPPLIER', 'RETAILER'), validate(updateOrderStatusSchema), updateOrderStatus);
 
 // Retailer views their own orders
 router.get('/retailer/me', requireAuth, requireRole('RETAILER'), getMyOrdersAsRetailer);

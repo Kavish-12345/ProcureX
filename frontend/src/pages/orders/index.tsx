@@ -173,6 +173,18 @@ function OrdersPage() {
                       </div>
                     )}
 
+                    {!isSupplier && order.status === 'PENDING' && (
+                      <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-black/10 pt-4">
+                        <Button
+                          variant="outline"
+                          disabled={isPending}
+                          onClick={() => handleTransition(order.id, 'CANCELLED')}
+                        >
+                          Cancel order
+                        </Button>
+                      </div>
+                    )}
+
                     {isSupplier && (
                       <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-black/10 pt-4">
                         {order.status === 'PENDING' && !isConfirming && (

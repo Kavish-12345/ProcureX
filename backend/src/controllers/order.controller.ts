@@ -84,6 +84,7 @@ export async function updateOrderStatus(req: Request, res: Response) {
     const { id } = req.params;
     const data = req.body as UpdateOrderStatusInput;
     const userId = req.user!.userId;
+    const userRole = req.user!.role;
 
     if (!id || typeof id !== 'string') {
       return res.status(400).json({ message: 'Invalid order id' });
@@ -98,8 +99,19 @@ export async function updateOrderStatus(req: Request, res: Response) {
         throw new Error('Order not found');
       }
 
-      if (existingOrder.supplierId !== userId) {
-        throw new Error('You are not authorized to update this order');
+      // Suppliers manage the full lifecycle of their own orders. Retailers may
+      // only cancel their own order, and only before the supplier has acted on it.
+      if (userRole === 'SUPPLIER') {
+        if (existingOrder.supplierId !== userId) {
+          throw new Error('You are not authorized to update this order');
+        }
+      } else {
+        if (existingOrder.retailerId !== userId) {
+          throw new Error('You are not authorized to update this order');
+        }
+        if (data.status !== 'CANCELLED' || existingOrder.status !== 'PENDING') {
+          throw new Error('Retailers may only cancel a pending order');
+        }
       }
 
       // State machine
