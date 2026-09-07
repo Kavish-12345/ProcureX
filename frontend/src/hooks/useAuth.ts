@@ -43,3 +43,37 @@ export function useLogout() {
         },
     });
 }
+
+export function useForgotPassword() {
+    return useMutation({
+        mutationFn: authApi.forgotPassword,
+    });
+}
+
+export function useResetPassword() {
+    const navigate = useNavigate();
+
+    return useMutation({
+        mutationFn: authApi.resetPassword,
+        onSuccess: () => {
+            navigate({ to: '/auth/login' });
+        },
+    });
+}
+
+export function useUpdateProfile() {
+    const setUser = useAuthStore((state) => state.setUser);
+
+    return useMutation({
+        mutationFn: authApi.updateProfile,
+        onSuccess: (res) => {
+            setUser(res.data.user);
+        },
+    });
+}
+
+export function useChangePassword() {
+    return useMutation({
+        mutationFn: authApi.changePassword,
+    });
+}

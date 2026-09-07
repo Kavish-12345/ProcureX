@@ -34,7 +34,9 @@ client.interceptors.response.use(
         if (
             error.response?.status === 401 &&
             !originalRequest._retry &&
-            !originalRequest.url?.includes('/auth/refresh')
+            !originalRequest.url?.includes('/auth/refresh') &&
+            !originalRequest.url?.includes('/auth/login') &&
+            !originalRequest.url?.includes('/auth/signup')
         ) {
             if (isRefreshing) {
                 // If already refreshing, queue this request until refresh completes
@@ -54,7 +56,7 @@ client.interceptors.response.use(
             } catch (refreshError) {
                 processQueue(refreshError);
                 useAuthStore.getState().clearUser();
-                window.location.href = '/login';
+                window.location.href = '/auth/login';
                 return Promise.reject(refreshError);
             } finally {
                 isRefreshing = false;

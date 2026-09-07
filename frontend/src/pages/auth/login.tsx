@@ -4,32 +4,11 @@ import toast from "react-hot-toast";
 import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { useLogin } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
+import { extractErrors } from "@/lib/utils";
 
 export const Route = createFileRoute("/auth/login")({
   component: LoginPage,
 });
-
-
-function extractErrors(error: unknown) {
-  if (error && typeof error === "object" && "response" in error) {
-    const data = (error as any).response?.data;
-    const fieldErrors: Record<string, string[]> = {};
-    const properties = data?.errors?.properties;
-    if (properties) {
-      for (const key in properties) {
-        if (properties[key]?.errors?.length) {
-          fieldErrors[key] = properties[key].errors;
-        }
-      }
-    }
-    const generalMessage =
-      Object.keys(fieldErrors).length > 0
-        ? (data?.message ?? "Please fix the errors below")
-        : (data?.message ?? "Login failed. Please try again.");
-    return { fieldErrors, generalMessage };
-  }
-  return { fieldErrors: {}, generalMessage: "Login failed. Please try again." };
-}
 
 function LoginPage() {
   const [email, setEmail] = useState("");
@@ -46,14 +25,14 @@ function LoginPage() {
           toast.success("Logged in successfully!");
         },
         onError: (err) => {
-          const { generalMessage } = extractErrors(err);
+          const { generalMessage } = extractErrors(err, "Login failed. Please try again.");
           toast.error(generalMessage);
         },
       },
     );
   }
 
-  const { fieldErrors } = extractErrors(error);
+  const { fieldErrors } = extractErrors(error, "Login failed. Please try again.");
 
   return (
     <div className="h-screen overflow-hidden bg-white text-black">
@@ -141,12 +120,20 @@ function LoginPage() {
             </div>
 
             <div>
-              <label
-                htmlFor="password"
-                className="font-mono text-[10px] font-semibold uppercase tracking-wide text-black/45"
-              >
-                Password
-              </label>
+              <div className="flex items-center justify-between">
+                <label
+                  htmlFor="password"
+                  className="font-mono text-[10px] font-semibold uppercase tracking-wide text-black/45"
+                >
+                  Password
+                </label>
+                <Link
+                  to={"/auth/forgot-password" as any}
+                  className="text-[11px] font-semibold text-black/50 underline underline-offset-4 hover:text-black"
+                >
+                  Forgot password?
+                </Link>
+              </div>
               <div className="relative mt-2">
                 <input
                   id="password"

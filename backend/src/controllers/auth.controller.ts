@@ -1,12 +1,17 @@
 import type {Request , Response , NextFunction} from 'express'
+import crypto from 'crypto';
 import prismaClientPkg from '@prisma/client';
 import prisma from '../lib/prisma.js';
 import logger from '../lib/logger.js';
+import redis from '../lib/redis.js';
+import { config } from '../config/index.js';
 
 const { Prisma } = prismaClientPkg;
 import { hashPassword, comparePassword } from '../utils/password.js';
 import { signAccessToken, signRefreshToken, verifyRefreshToken, revokeToken, isTokenRevoked } from '../utils/jwt.js';
-import type { SignupInput, LoginInput } from '../schemas/auth.schema.js';
+import type { SignupInput, LoginInput, ForgotPasswordInput, ResetPasswordInput, UpdateProfileInput, ChangePasswordInput } from '../schemas/auth.schema.js';
+
+const RESET_TOKEN_TTL_SECONDS = 15 * 60; // 15 minutes
 
 const ACCESS_TOKEN_MAX_AGE = 15 * 60 * 1000; // 15 minutes
 const REFRESH_TOKEN_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7 days
@@ -69,6 +74,7 @@ export async function signup(req: Request, res:Response){
         email: user.email,
         name: user.name,
         businessName: user.businessName,
+        phone: user.phone,
         role: user.role,
       },
     });
@@ -112,6 +118,7 @@ export async function login(req: Request, res: Response) {
         email: user.email,
         name: user.name,
         businessName: user.businessName,
+        phone: user.phone,
         role: user.role,
       },
     });
@@ -177,4 +184,107 @@ export async function logout(req: Request, res: Response) {
       logger.error('Logout error:', error);
       return res.status(500).json({ message: 'Something went wrong during logout' });
   }
+}
+
+// Always responds 200 with the same generic message, whether or not the email
+// exists — otherwise this endpoint becomes a free "is this email registered?" oracle.
+export async function forgotPassword(req: Request, res: Response) {
+    try {
+        const { email } = req.body as ForgotPasswordInput;
+
+        const user = await prisma.user.findUnique({ where: { email } });
+
+        if (user) {
+            const token = crypto.randomBytes(32).toString('hex');
+            await redis.set(`reset:${token}`, user.id, 'EX', RESET_TOKEN_TTL_SECONDS);
+
+            const resetLink = `${config.frontendUrl}/auth/reset-password?token=${token}`;
+            logger.info(`Password reset link for ${user.email}: ${resetLink}`);
+        }
+
+        return res.status(200).json({
+            message: 'If that email is registered, a password reset link has been sent',
+        });
+    } catch (error) {
+        logger.error('Forgot password error:', error);
+        return res.status(500).json({ message: 'Something went wrong, please try again' });
+    }
+}
+
+export async function resetPassword(req: Request, res: Response) {
+    try {
+        const { token, password } = req.body as ResetPasswordInput;
+
+        const userId = await redis.get(`reset:${token}`);
+        if (!userId) {
+            return res.status(400).json({ message: 'Invalid or expired reset link' });
+        }
+
+        const hashedPassword = await hashPassword(password);
+
+        await prisma.user.update({
+            where: { id: userId },
+            data: { password: hashedPassword },
+        });
+
+        await redis.del(`reset:${token}`);
+
+        return res.status(200).json({ message: 'Password reset successful' });
+    } catch (error) {
+        logger.error('Reset password error:', error);
+        return res.status(500).json({ message: 'Something went wrong, please try again' });
+    }
+}
+
+export async function updateProfile(req: Request, res: Response) {
+    try {
+        const data = req.body as UpdateProfileInput;
+
+        const user = await prisma.user.update({
+            where: { id: req.user!.userId },
+            data,
+        });
+
+        return res.status(200).json({
+            message: 'Profile updated successfully',
+            user: {
+                id: user.id,
+                email: user.email,
+                name: user.name,
+                businessName: user.businessName,
+                phone: user.phone,
+                role: user.role,
+            },
+        });
+    } catch (error) {
+        logger.error('Update profile error:', error);
+        return res.status(500).json({ message: 'Something went wrong while updating profile' });
+    }
+}
+
+export async function changePassword(req: Request, res: Response) {
+    try {
+        const { currentPassword, newPassword } = req.body as ChangePasswordInput;
+
+        const user = await prisma.user.findUnique({ where: { id: req.user!.userId } });
+        if (!user) {
+            return res.status(401).json({ message: 'Not authenticated' });
+        }
+
+        const isCurrentValid = await comparePassword(currentPassword, user.password);
+        if (!isCurrentValid) {
+            return res.status(400).json({ message: 'Current password is incorrect' });
+        }
+
+        const hashedPassword = await hashPassword(newPassword);
+        await prisma.user.update({
+            where: { id: user.id },
+            data: { password: hashedPassword },
+        });
+
+        return res.status(200).json({ message: 'Password changed successfully' });
+    } catch (error) {
+        logger.error('Change password error:', error);
+        return res.status(500).json({ message: 'Something went wrong while changing password' });
+    }
 }

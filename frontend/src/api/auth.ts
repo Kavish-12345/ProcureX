@@ -20,6 +20,26 @@ interface AuthResponse {
     user: User;
 }
 
+interface ForgotPasswordData {
+    email: string;
+}
+
+interface ResetPasswordData {
+    token: string;
+    password: string;
+}
+
+interface UpdateProfileData {
+    name?: string;
+    businessName?: string;
+    phone?: string;
+}
+
+interface ChangePasswordData {
+    currentPassword: string;
+    newPassword: string;
+}
+
 export const authApi = {
     signup: (data: SignupData) =>
         client.post<AuthResponse>('/auth/signup', data),
@@ -32,4 +52,16 @@ export const authApi = {
 
     refresh: () =>
         client.post('/auth/refresh'),
+
+    forgotPassword: (data: ForgotPasswordData) =>
+        client.post<{ message: string }>('/auth/forgot-password', data),
+
+    resetPassword: (data: ResetPasswordData) =>
+        client.post<{ message: string }>('/auth/reset-password', data),
+
+    updateProfile: (data: UpdateProfileData) =>
+        client.patch<AuthResponse>('/auth/profile', data),
+
+    changePassword: (data: ChangePasswordData) =>
+        client.patch<{ message: string }>('/auth/profile/password', data),
 };

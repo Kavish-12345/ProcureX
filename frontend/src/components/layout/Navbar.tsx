@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import { ChevronDown, LogOut, Building2 } from 'lucide-react';
+import { Link } from '@tanstack/react-router';
+import { ChevronDown, LogOut, Building2, User as UserIcon } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { useLogout } from '@/hooks/useAuth';
 
@@ -52,6 +53,14 @@ export function Navbar() {
                             <p className="font-serif text-[14px] text-black">{user?.name}</p>
                             <p className="mt-0.5 truncate text-[11px] text-black/45">{user?.email}</p>
                         </div>
+                        <Link
+                            to={'/profile' as any}
+                            onClick={() => setOpen(false)}
+                            className="flex w-full items-center gap-2 border-b border-black/10 px-4 py-3 font-mono text-[11px] font-semibold uppercase tracking-wide text-black transition-colors hover:bg-black hover:text-white"
+                        >
+                            <UserIcon className="h-3.5 w-3.5" strokeWidth={2} />
+                            Profile
+                        </Link>
                         <button
                             type="button"
                             onClick={() => logout()}

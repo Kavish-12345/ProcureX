@@ -19,6 +19,7 @@ describe('POST /api/auth/signup', () => {
       email: validSignupBody.email,
       name: validSignupBody.name,
       businessName: validSignupBody.businessName,
+      phone: validSignupBody.phone,
       role: validSignupBody.role,
     });
     expect(res.body.user.password).toBeUndefined();

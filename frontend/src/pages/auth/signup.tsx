@@ -4,36 +4,13 @@ import toast from "react-hot-toast";
 import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { useSignUp } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
+import { extractErrors } from "@/lib/utils";
 
 export const Route = createFileRoute("/auth/signup")({
   component: SignupPage,
 });
 
 type Role = "RETAILER" | "SUPPLIER";
-
-function extractErrors(error: unknown) {
-  if (error && typeof error === "object" && "response" in error) {
-    const data = (error as any).response?.data;
-    const fieldErrors: Record<string, string[]> = {};
-    const properties = data?.errors?.properties;
-    if (properties) {
-      for (const key in properties) {
-        if (properties[key]?.errors?.length) {
-          fieldErrors[key] = properties[key].errors;
-        }
-      }
-    }
-    const generalMessage =
-      Object.keys(fieldErrors).length > 0
-        ? (data?.message ?? "Please fix the errors below")
-        : (data?.message ?? "Signup failed. Please try again.");
-    return { fieldErrors, generalMessage };
-  }
-  return {
-    fieldErrors: {},
-    generalMessage: "Signup failed. Please try again.",
-  };
-}
 
 function SignupPage() {
   const [name, setName] = useState("");
@@ -54,14 +31,14 @@ function SignupPage() {
           toast.success("Account created successfully!");
         },
         onError: (err) => {
-          const { generalMessage } = extractErrors(err);
+          const { generalMessage } = extractErrors(err, "Signup failed. Please try again.");
           toast.error(generalMessage);
         },
       },
     );
   }
 
-  const { fieldErrors } = extractErrors(error);
+  const { fieldErrors } = extractErrors(error, "Signup failed. Please try again.");
 
   return (
     <div className="h-screen overflow-hidden bg-white text-black">
