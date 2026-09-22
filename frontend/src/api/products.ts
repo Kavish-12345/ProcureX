@@ -58,4 +58,13 @@ export const productsApi = {
     // Supplier: delete their product
     delete: (id: string) =>
         client.delete(`/products/${id}`),
+
+    // Supplier: upload/replace their product's image.
+    // axios sets the multipart Content-Type (with its boundary) automatically
+    // when the body is a FormData, so no explicit header is needed here.
+    uploadImage: (id: string, file: File) => {
+        const formData = new FormData();
+        formData.append('image', file);
+        return client.post<ProductResponse>(`/products/${id}/image`, formData);
+    },
 };

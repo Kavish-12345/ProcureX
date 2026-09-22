@@ -2,7 +2,6 @@ import type { Request, Response } from "express";
 import prisma from "../lib/prisma.js";
 import logger from "../lib/logger.js";
 import type { CreateOrderInput, UpdateOrderStatusInput } from "../schemas/order.schema.js";
-import { create } from "node:domain";
 
 export async function createOrder(req: Request, res: Response) {
   try {
@@ -91,7 +90,10 @@ export async function updateOrderStatus(req: Request, res: Response) {
     }
 
     const order = await prisma.$transaction(async (tx) => {
-      const existingOrder = await prisma.order.findUnique({
+      // Must read through `tx`: the authorization and state-machine checks below
+      // depend on this row, so reading it outside the transaction would let two
+      // concurrent updates both see PENDING and both be allowed through.
+      const existingOrder = await tx.order.findUnique({
         where: { id },
       });
 

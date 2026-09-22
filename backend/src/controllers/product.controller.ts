@@ -1,6 +1,9 @@
 import type { Request, Response } from 'express';
+import crypto from 'crypto';
+import path from 'path';
 import prisma from '../lib/prisma.js';
 import logger from '../lib/logger.js';
+import { uploadToR2, deleteFromR2, extractKeyFromUrl } from '../lib/r2.js';
 import type { CreateProductInput, UpdateProductInput } from '../schemas/product.schema.js';
 
 export async function createProduct (req: Request, res: Response){
@@ -167,6 +170,62 @@ export async function deleteProduct(req: Request, res: Response) {
     } catch (error) {
     logger.error('Delete product error:', error);
     return res.status(500).json({ message: 'Something went wrong while deleting the product' });
+  }
+}
+
+export async function uploadProductImage(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    if (!id || typeof id !== 'string') {
+      return res.status(400).json({ message: 'Invalid product id' });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ message: 'No image file provided' });
+    }
+
+    const supplierId = req.user!.userId;
+    const existingProduct = await prisma.product.findUnique({ where: { id } });
+
+    if (!existingProduct) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+
+    if (existingProduct.supplierId !== supplierId) {
+      return res.status(403).json({ message: 'You do not own this product' });
+    }
+
+    const extension = path.extname(req.file.originalname).toLowerCase() || '.jpg';
+    const key = `products/${id}/${crypto.randomUUID()}${extension}`;
+    const imageUrl = await uploadToR2(req.file.buffer, key, req.file.mimetype);
+
+    // Replacing an image: drop the old object so re-uploads don't leave orphans
+    // accumulating in the bucket. Done after the new upload succeeds, so a failed
+    // upload can never leave the product with no image at all.
+    if (existingProduct.imageUrl) {
+      const oldKey = extractKeyFromUrl(existingProduct.imageUrl);
+      if (oldKey) {
+        try {
+          await deleteFromR2(oldKey);
+        } catch (error) {
+          // A leftover object is not worth failing the request the user just made.
+          logger.error('Failed to delete replaced product image:', error);
+        }
+      }
+    }
+
+    const updatedProduct = await prisma.product.update({
+      where: { id },
+      data: { imageUrl },
+    });
+
+    return res.status(200).json({
+      message: 'Product image uploaded successfully',
+      product: updatedProduct,
+    });
+  } catch (error) {
+    logger.error('Upload product image error:', error);
+    return res.status(500).json({ message: 'Something went wrong while uploading the image' });
   }
 }
 

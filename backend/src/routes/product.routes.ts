@@ -6,10 +6,12 @@ import {
   getProductsBySupplier,
   updateProduct,
   deleteProduct,
+  uploadProductImage,
 } from '../controllers/product.controller.js';
 import { requireAuth } from '../middleware/auth.js';
 import { requireRole } from '../middleware/requireRole.js';
 import { validate } from '../middleware/validate.js';
+import { uploadImage } from '../middleware/upload.js';
 import { createProductSchema, updateProductSchema } from '../schemas/product.schema.js';
 
 const router = Router();
@@ -23,5 +25,6 @@ router.post('/', requireAuth, requireRole('SUPPLIER'), validate(createProductSch
 router.get('/', requireAuth, requireRole('SUPPLIER'), getMyProducts);
 router.patch('/:id', requireAuth, requireRole('SUPPLIER'), validate(updateProductSchema), updateProduct);
 router.delete('/:id', requireAuth, requireRole('SUPPLIER'), deleteProduct);
+router.post('/:id/image', requireAuth, requireRole('SUPPLIER'), uploadImage, uploadProductImage);
 
 export default router;

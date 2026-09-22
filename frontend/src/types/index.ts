@@ -38,6 +38,7 @@ export interface Product {
   unitPrice: number;
   stock: number;
   unit: string;
+  imageUrl?: string;
   createdAt: string;
   supplierId: string;
   supplier?: {

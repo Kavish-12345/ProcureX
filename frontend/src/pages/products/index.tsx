@@ -1,40 +1,22 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useEffect, type FormEvent } from "react";
+import { useState, useEffect, type FormEvent, type ChangeEvent } from "react";
 import toast from "react-hot-toast";
+import { ImageIcon } from "lucide-react";
 import { PageWrapper } from "@/components/layout/PageWrapper";
 import { SearchInput } from "@/components/shared/SearchInput";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 import { Button } from "@/components/ui/button";
+import { extractErrors } from "@/lib/utils";
 import {
   useMyProducts,
   useCreateProduct,
   useDeleteProduct,
+  useUploadProductImage,
 } from "@/hooks/useProducts";
 
 export const Route = createFileRoute("/products/")({
   component: ProductsPage,
 });
-
-function extractErrors(error: unknown) {
-  if (error && typeof error === "object" && "response" in error) {
-    const data = (error as any).response?.data;
-    const fieldErrors: Record<string, string[]> = {};
-    const properties = data?.errors?.properties;
-    if (properties) {
-      for (const key in properties) {
-        if (properties[key]?.errors?.length) {
-          fieldErrors[key] = properties[key].errors;
-        }
-      }
-    }
-    const generalMessage =
-      Object.keys(fieldErrors).length > 0
-        ? (data?.message ?? "Please fix the errors below")
-        : (data?.message ?? "Something went wrong.");
-    return { fieldErrors, generalMessage };
-  }
-  return { fieldErrors: {}, generalMessage: "Something went wrong." };
-}
 
 const PAGE_SIZE = 20;
 
@@ -63,6 +45,11 @@ function ProductsPage() {
 
   const { mutate: createProduct, isPending, error } = useCreateProduct();
   const { mutate: deleteProduct } = useDeleteProduct();
+  const { mutate: uploadProductImage } = useUploadProductImage();
+
+  // The upload mutation's own isPending can't say *which* row is uploading,
+  // so the in-flight product id is tracked separately.
+  const [uploadingId, setUploadingId] = useState<string | null>(null);
 
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState("");
@@ -103,6 +90,28 @@ function ProductsPage() {
         },
       },
     );
+  }
+
+  function handleImageChange(e: ChangeEvent<HTMLInputElement>, productId: string) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingId(productId);
+    uploadProductImage(
+      { id: productId, file },
+      {
+        onSuccess: () => toast.success("Image updated"),
+        onError: (err) => {
+          const { generalMessage } = extractErrors(err, "Failed to upload image");
+          toast.error(generalMessage);
+        },
+        onSettled: () => setUploadingId(null),
+      },
+    );
+
+    // Let the same file be picked again later (browsers skip the change event
+    // otherwise, so a failed upload couldn't simply be retried).
+    e.target.value = "";
   }
 
   function handleDelete(id: string) {
@@ -253,6 +262,7 @@ function ProductsPage() {
             <table className="w-full text-sm">
               <thead className="border-b border-black">
                 <tr>
+                  <th className="whitespace-nowrap px-3 py-2.5 text-left font-mono text-[10px] font-semibold uppercase tracking-wide text-black/50">Image</th>
                   <th className="whitespace-nowrap px-3 py-2.5 text-left font-mono text-[10px] font-semibold uppercase tracking-wide text-black/50">Name</th>
                   <th className="whitespace-nowrap px-3 py-2.5 text-left font-mono text-[10px] font-semibold uppercase tracking-wide text-black/50">Unit price</th>
                   <th className="whitespace-nowrap px-3 py-2.5 text-left font-mono text-[10px] font-semibold uppercase tracking-wide text-black/50">Unit</th>
@@ -264,6 +274,38 @@ function ProductsPage() {
               <tbody className="divide-y divide-black/10">
                 {products.map((p) => (
                   <tr key={p.id}>
+                    <td className="px-3 py-2.5">
+                      {/* The thumbnail is itself the upload control — clicking it
+                          opens the file picker, so no extra button is needed. */}
+                      <label
+                        title={p.imageUrl ? "Replace image" : "Upload image"}
+                        className="relative block h-11 w-11 cursor-pointer border border-black/20 transition-colors hover:border-black"
+                      >
+                        {p.imageUrl ? (
+                          <img
+                            src={p.imageUrl}
+                            alt={p.name}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <span className="flex h-full w-full items-center justify-center bg-black/[0.03] text-black/30">
+                            <ImageIcon className="h-4 w-4" strokeWidth={2} />
+                          </span>
+                        )}
+                        {uploadingId === p.id && (
+                          <span className="absolute inset-0 flex items-center justify-center bg-white/80 font-mono text-[8px] font-semibold uppercase tracking-wide text-black">
+                            …
+                          </span>
+                        )}
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          className="hidden"
+                          disabled={uploadingId === p.id}
+                          onChange={(e) => handleImageChange(e, p.id)}
+                        />
+                      </label>
+                    </td>
                     <td className="px-3 py-2.5 text-[13px] text-black">{p.name}</td>
                     <td className="px-3 py-2.5 font-mono text-[12px] whitespace-nowrap text-black/80">₹{p.unitPrice}</td>
                     <td className="px-3 py-2.5 text-[13px] text-black/60">{p.unit}</td>

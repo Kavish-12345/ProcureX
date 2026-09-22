@@ -44,11 +44,12 @@ model User {
 
 model Product{
   id            String       @id @default(uuid())
-  name          String 
-  description   String? 
+  name          String
+  description   String?
   unitPrice     Decimal      @db.Decimal(10,2)
   stock         Int          @default(0)
   unit          String
+  imageUrl      String?
   createdAt     DateTime     @default(now())
 
   supplierId    String 

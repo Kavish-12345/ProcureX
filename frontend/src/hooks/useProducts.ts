@@ -56,6 +56,19 @@ export function useUpdateProduct() {
     });
 }
 
+// Supplier: upload/replace their product's image
+export function useUploadProductImage() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ id, file }: { id: string; file: File }) =>
+            productsApi.uploadImage(id, file),
+        onSuccess: (_res, variables) => {
+            queryClient.invalidateQueries({ queryKey: ['products'] });
+            queryClient.invalidateQueries({ queryKey: ['products', variables.id] });
+        },
+    });
+}
+
 // Supplier: delete their product
 export function useDeleteProduct() {
     const queryClient = useQueryClient();
