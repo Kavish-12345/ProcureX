@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import prisma from "../lib/prisma.js";
 import logger from "../lib/logger.js";
+import { createNotification } from "../lib/notifications.js";
 import type { CreateOrderInput, UpdateOrderStatusInput } from "../schemas/order.schema.js";
 
 export async function createOrder(req: Request, res: Response) {
@@ -61,6 +62,13 @@ export async function createOrder(req: Request, res: Response) {
         include: {
           items: { include: { product: true } },
         },
+      });
+
+      await createNotification(tx, {
+        userId: data.supplierId,
+        type: 'ORDER_PLACED',
+        message: `New order received — ₹${totalAmount.toFixed(2)}`,
+        orderId: newOrder.id,
       });
 
       return newOrder;
@@ -198,6 +206,33 @@ export async function updateOrderStatus(req: Request, res: Response) {
             },
           });
         }
+      }
+
+      // Whoever didn't make the change is the one who needs to hear about it:
+      // a supplier moving the order along notifies the retailer, and a retailer
+      // cancelling notifies the supplier.
+      const isRetailerCancelling = userRole === 'RETAILER';
+
+      const notificationForStatus = {
+        CONFIRMED: { type: 'ORDER_CONFIRMED', message: 'Your order was confirmed' },
+        SHIPPED: { type: 'ORDER_SHIPPED', message: 'Your order has shipped' },
+        DELIVERED: { type: 'ORDER_DELIVERED', message: 'Your order was delivered' },
+        CANCELLED: {
+          type: 'ORDER_CANCELLED',
+          message: isRetailerCancelling
+            ? 'An order was cancelled by the retailer'
+            : 'Your order was cancelled by the supplier',
+        },
+      } as const;
+
+      const notification = notificationForStatus[data.status as keyof typeof notificationForStatus];
+      if (notification) {
+        await createNotification(tx, {
+          userId: isRetailerCancelling ? existingOrder.supplierId : existingOrder.retailerId,
+          type: notification.type,
+          message: notification.message,
+          orderId: id,
+        });
       }
 
       return updatedOrder;

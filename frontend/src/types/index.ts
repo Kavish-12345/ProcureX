@@ -93,6 +93,25 @@ export interface Order {
   ledgerEntry?: LedgerEntry;
 }
 
+export type NotificationType =
+  | 'ORDER_PLACED'
+  | 'ORDER_CONFIRMED'
+  | 'ORDER_SHIPPED'
+  | 'ORDER_DELIVERED'
+  | 'ORDER_CANCELLED'
+  | 'CONNECTION_CREATED'
+  | 'PAYMENT_RECORDED';
+
+export interface Notification {
+  id: string;
+  type: NotificationType;
+  message: string;
+  isRead: boolean;
+  createdAt: string;
+  userId: string;
+  orderId?: string | null;
+}
+
 export interface ApiSuccess<T> {
   success: true;
   data: T;

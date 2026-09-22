@@ -7,7 +7,7 @@ import redis from '../../lib/redis.js';
 // foreign keys between these tables regardless of the order listed here.
 beforeEach(async () => {
   await prisma.$executeRawUnsafe(
-    `TRUNCATE TABLE "LedgerEntry", "OrderItem", "Order", "SupplierRetailerConnection", "Product", "User" RESTART IDENTITY CASCADE;`
+    `TRUNCATE TABLE "Notification", "LedgerEntry", "OrderItem", "Order", "SupplierRetailerConnection", "Product", "User" RESTART IDENTITY CASCADE;`
   );
 });
 

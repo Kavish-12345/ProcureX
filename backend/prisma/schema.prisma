@@ -18,11 +18,21 @@ enum Role {
 }
 
 enum OrderStatus{
-  PENDING 
-  CONFIRMED 
-  SHIPPED  
-  DELIVERED 
+  PENDING
+  CONFIRMED
+  SHIPPED
+  DELIVERED
   CANCELLED
+}
+
+enum NotificationType{
+  ORDER_PLACED
+  ORDER_CONFIRMED
+  ORDER_SHIPPED
+  ORDER_DELIVERED
+  ORDER_CANCELLED
+  CONNECTION_CREATED
+  PAYMENT_RECORDED
 }
 
 model User {
@@ -40,6 +50,7 @@ model User {
   ordersReceived   Order[]        @relation("SupplierOrders")
   supplierConnections  SupplierRetailerConnection[]  @relation("SupplierConnections")
   retailerConnections  SupplierRetailerConnection[]  @relation("RetailerConnections")
+  notifications        Notification[]                @relation("UserNotifications")
 }
 
 model Product{
@@ -73,6 +84,7 @@ model Order{
 
   items         OrderItem[]
   ledgerEntry   LedgerEntry?
+  notifications Notification[]
 }
 
 model OrderItem{
@@ -97,6 +109,24 @@ model LedgerEntry{
 
   orderId       String     @unique
   order         Order      @relation(fields: [orderId], references:[id])
+}
+
+model Notification{
+  id            String            @id @default(uuid())
+  type          NotificationType
+  message       String
+  isRead        Boolean           @default(false)
+  createdAt     DateTime          @default(now())
+
+  userId        String
+  user          User              @relation("UserNotifications", fields: [userId], references: [id])
+
+  orderId       String?
+  order         Order?            @relation(fields: [orderId], references: [id])
+
+  // The unread-count query runs on a poll for every signed-in user, which makes
+  // it the one genuinely hot read in the app — hence the only index in this schema.
+  @@index([userId, isRead])
 }
 
 model SupplierRetailerConnection{
