@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
-import { LayoutDashboard, ClipboardList, Users, Receipt, Package, ChevronLeft, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, ClipboardList, Users, Receipt, Package, ChevronLeft, ChevronRight, ShieldCheck } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { Wordmark } from '@/components/shared/Wordmark';
 
@@ -8,6 +8,11 @@ interface NavLink {
     label: string;
     to: string;
     icon: typeof LayoutDashboard;
+    // Active state is prefix-based by default, so a link whose path is a prefix
+    // of a sibling's (e.g. /admin vs /admin/orders) lights up on both and needs
+    // exact matching. Left off for /suppliers, which *should* stay highlighted
+    // while viewing /suppliers/$id.
+    exact?: boolean;
 }
 
 const retailerLinks: NavLink[] = [
@@ -24,9 +29,21 @@ const supplierLinks: NavLink[] = [
     { label: 'Receivables', to: '/ledger', icon: Receipt },
 ];
 
+const adminLinks: NavLink[] = [
+    { label: 'Overview', to: '/admin', icon: ShieldCheck, exact: true },
+    { label: 'Users', to: '/admin/users', icon: Users },
+    { label: 'Orders', to: '/admin/orders', icon: ClipboardList },
+];
+
+const linksByRole: Record<string, NavLink[]> = {
+    SUPPLIER: supplierLinks,
+    RETAILER: retailerLinks,
+    ADMIN: adminLinks,
+};
+
 export function Sidebar() {
     const user = useAuthStore((state) => state.user);
-    const links = user?.role === 'SUPPLIER' ? supplierLinks : retailerLinks;
+    const links = linksByRole[user?.role ?? 'RETAILER'] ?? retailerLinks;
     const [collapsed, setCollapsed] = useState(false);
 
     return (
@@ -57,6 +74,7 @@ export function Sidebar() {
                             className={`flex items-center gap-2.5 px-3 py-2 font-mono text-[11px] font-semibold uppercase tracking-wide text-black/50 transition-colors hover:text-black [&.active]:bg-black [&.active]:text-white ${
                                 collapsed ? 'justify-center' : ''
                             }`}
+                            activeOptions={{ exact: link.exact ?? false }}
                             activeProps={{ className: 'active' }}
                         >
                             <Icon className="h-4 w-4 shrink-0" strokeWidth={2} />

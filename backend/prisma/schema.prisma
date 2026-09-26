@@ -7,6 +7,11 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// Deliberately NOT using the postgresqlExtensions preview feature. Enabling it
+// makes Prisma manage extensions, which means every extension already installed
+// (pgcrypto, here) must be declared AND recorded in migration history, or it
+// reports drift forever. The only thing it buys is generating one CREATE
+// EXTENSION line, which the trigram migration does by hand instead.
 datasource db {
   provider = "postgresql"
 }
@@ -41,8 +46,9 @@ model User {
   password      String    
   name          String 
   businessName  String
-  phone         String 
-  role          Role 
+  phone         String
+  role          Role
+  isActive      Boolean  @default(true)
   createdAt     DateTime @default(now())
 
   products         Product[]      @relation("SupplierProducts")
@@ -51,6 +57,13 @@ model User {
   supplierConnections  SupplierRetailerConnection[]  @relation("SupplierConnections")
   retailerConnections  SupplierRetailerConnection[]  @relation("RetailerConnections")
   notifications        Notification[]                @relation("UserNotifications")
+
+  // Admin search uses `contains` + insensitive, which becomes ILIKE '%term%'.
+  // A btree can't serve a leading wildcard, so without these every keystroke
+  // scans the whole table. Trigram GIN indexes can.
+  @@index([businessName(ops: raw("gin_trgm_ops"))], type: Gin)
+  @@index([name(ops: raw("gin_trgm_ops"))], type: Gin)
+  @@index([email(ops: raw("gin_trgm_ops"))], type: Gin)
 }
 
 model Product{
@@ -63,10 +76,15 @@ model Product{
   imageUrl      String?
   createdAt     DateTime     @default(now())
 
-  supplierId    String 
+  supplierId    String
   supplier      User         @relation("SupplierProducts" , fields: [supplierId], references: [id])
 
   orderItems    OrderItem[]
+
+  // Postgres does not index foreign keys automatically. Paired with createdAt so
+  // the same index serves both the filter and the `orderBy: createdAt desc` that
+  // every catalog listing uses.
+  @@index([supplierId, createdAt])
 }
 
 model Order{
@@ -85,6 +103,11 @@ model Order{
   items         OrderItem[]
   ledgerEntry   LedgerEntry?
   notifications Notification[]
+
+  // The two hottest reads in the app — "my orders" from either side. Both pair
+  // the owner with createdAt, since every listing sorts newest-first.
+  @@index([retailerId, createdAt])
+  @@index([supplierId, createdAt])
 }
 
 model OrderItem{
@@ -95,8 +118,11 @@ model OrderItem{
   orderId       String 
   order         Order       @relation(fields: [orderId], references: [id])
 
-  productId     String 
+  productId     String
   product       Product     @relation(fields: [productId], references:[id])
+
+  // Read on every order confirm and cancel, to adjust stock line by line.
+  @@index([orderId])
 }
 
 model LedgerEntry{
@@ -138,4 +164,9 @@ model SupplierRetailerConnection{
   createdAt  DateTime @default(now())
 
   @@unique([supplierId, retailerId])
+
+  // The unique above is backed by an index whose leading column is supplierId,
+  // so supplier-side lookups are already covered — but an index can't be used
+  // for a filter on its second column alone, so the retailer side needs its own.
+  @@index([retailerId])
 }

@@ -20,4 +20,6 @@ export const config = {
     r2SecretAccessKey: process.env.R2_SECRET_ACCESS_KEY || '',
     r2BucketName: process.env.R2_BUCKET_NAME || '',
     r2PublicUrl: process.env.R2_PUBLIC_URL || '',
+    gmailUser: process.env.GMAIL_USER || '',
+    gmailAppPassword: process.env.GMAIL_APP_PASSWORD || '',
 } as const;

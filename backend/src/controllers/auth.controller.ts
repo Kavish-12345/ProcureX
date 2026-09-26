@@ -4,6 +4,7 @@ import prismaClientPkg from '@prisma/client';
 import prisma from '../lib/prisma.js';
 import logger from '../lib/logger.js';
 import redis from '../lib/redis.js';
+import { sendPasswordResetEmail } from '../lib/mailer.js';
 import { config } from '../config/index.js';
 
 const { Prisma } = prismaClientPkg;
@@ -101,9 +102,15 @@ export async function login(req: Request, res: Response) {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
 
-    const isPasswordValid = await comparePassword(data.password , user.password); 
+    const isPasswordValid = await comparePassword(data.password , user.password);
     if (!isPasswordValid) {
       return res.status(401).json({ message: 'Invalid email or password' });
+    }
+
+    // Checked after the password, so this can't be used to probe which accounts
+    // exist — you only learn an account is suspended if you already had its password.
+    if (!user.isActive) {
+      return res.status(403).json({ message: 'This account has been suspended' });
     }
 
     const accessToken = signAccessToken({ userId: user.id, role: user.role });
@@ -158,6 +165,14 @@ export async function refresh(req: Request, res: Response){
            return res.status(401).json({ message: 'User no longer exists' });
         }
 
+        // This is what actually ends a suspended user's session: requireAuth does
+        // no DB work, so an already-issued access token stays valid until it
+        // expires (15m at most) — refresh is where they get cut off for good.
+        if (!user.isActive) {
+           clearAuthCookies(res);
+           return res.status(403).json({ message: 'This account has been suspended' });
+        }
+
      const newAccessToken = signAccessToken({ userId: user.id, role: user.role });
      const newRefreshToken = signRefreshToken({ userId: user.id, role: user.role });
 
@@ -199,7 +214,7 @@ export async function forgotPassword(req: Request, res: Response) {
             await redis.set(`reset:${token}`, user.id, 'EX', RESET_TOKEN_TTL_SECONDS);
 
             const resetLink = `${config.frontendUrl}/auth/reset-password?token=${token}`;
-            logger.info(`Password reset link for ${user.email}: ${resetLink}`);
+            await sendPasswordResetEmail(user.email, resetLink);
         }
 
         return res.status(200).json({

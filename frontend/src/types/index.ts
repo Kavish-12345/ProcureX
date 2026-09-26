@@ -5,6 +5,18 @@ export interface User {
   role: 'RETAILER' | 'SUPPLIER' | 'ADMIN';
   businessName: string;
   phone: string;
+  isActive?: boolean;
+  createdAt?: string;
+}
+
+export interface PlatformStats {
+  totalUsers: number;
+  retailers: number;
+  suppliers: number;
+  totalOrders: number;
+  pendingOrders: number;
+  unpaidEntries: number;
+  outstandingAmount: number | string;
 }
 
 export interface Supplier {

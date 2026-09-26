@@ -23,5 +23,13 @@ export function extractErrors(error: unknown, fallbackMessage = "Something went 
         : (data?.message ?? fallbackMessage);
     return { fieldErrors, generalMessage };
   }
+
+  // Errors thrown by our own mutation functions (rather than returned by the API)
+  // carry their message directly — checked after the axios shape above, since
+  // axios errors are Errors too.
+  if (error instanceof Error && error.message) {
+    return { fieldErrors: {}, generalMessage: error.message };
+  }
+
   return { fieldErrors: {}, generalMessage: fallbackMessage };
 }

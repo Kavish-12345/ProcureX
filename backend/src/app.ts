@@ -14,6 +14,7 @@ import ledgerRoutes from './routes/ledger.routes.js';
 import connectionRoutes from './routes/connection.routes.js';
 import discoveryRoutes from './routes/discovery.routes.js';
 import notificationRoutes from './routes/notification.routes.js';
+import adminRoutes from './routes/admin.routes.js';
 
 
 const app = express();
@@ -38,6 +39,7 @@ app.use('/api/orders' , orderRoutes);
 app.use('/api/ledger', ledgerRoutes);
 app.use('/api/connections', connectionRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/admin', adminRoutes);
 app.use('/api', discoveryRoutes);
 
 app.use((_req, res) => {

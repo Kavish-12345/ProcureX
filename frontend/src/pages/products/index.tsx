@@ -7,6 +7,7 @@ import { SearchInput } from "@/components/shared/SearchInput";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 import { Button } from "@/components/ui/button";
 import { extractErrors } from "@/lib/utils";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import {
   useMyProducts,
   useCreateProduct,
@@ -22,17 +23,13 @@ const PAGE_SIZE = 20;
 
 function ProductsPage() {
   const [searchInput, setSearchInput] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [page, setPage] = useState(1);
 
-  // Debounce search input by 400ms
+  const debouncedSearch = useDebouncedValue(searchInput);
+
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(searchInput);
-      setPage(1); // reset to page 1 on new search
-    }, 400);
-    return () => clearTimeout(timer);
-  }, [searchInput]);
+    setPage(1);
+  }, [debouncedSearch]);
 
   const { data, isLoading, isFetching } = useMyProducts({
     page,
