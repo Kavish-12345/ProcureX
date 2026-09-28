@@ -1,15 +1,15 @@
 import { jest } from '@jest/globals';
 
 const FAKE_PUBLIC_URL = 'https://images.example.com';
-const uploadToR2 = jest.fn<(buffer: Buffer, key: string, contentType: string) => Promise<string>>();
-const deleteFromR2 = jest.fn<(key: string) => Promise<void>>();
+const uploadFile = jest.fn<(buffer: Buffer, key: string, contentType: string) => Promise<string>>();
+const deleteFile = jest.fn<(key: string) => Promise<void>>();
 
-// The real module talks to Cloudflare R2 over the network. Mocked here so these
+// The real module talks to object storage over the network. Mocked here so these
 // tests exercise the controller's own logic (ownership, persistence, replacement)
 // without needing real credentials or touching a real bucket.
-jest.unstable_mockModule('../lib/r2.js', () => ({
-  uploadToR2,
-  deleteFromR2,
+jest.unstable_mockModule('../lib/storage.js', () => ({
+  uploadFile,
+  deleteFile,
   extractKeyFromUrl: (url: string) => {
     const prefix = `${FAKE_PUBLIC_URL}/`;
     return url.startsWith(prefix) ? url.slice(prefix.length) : null;
@@ -50,8 +50,8 @@ async function createProduct(cookie: string[]) {
 }
 
 beforeEach(() => {
-  uploadToR2.mockResolvedValue(`${FAKE_PUBLIC_URL}/products/test/image.jpg`);
-  deleteFromR2.mockResolvedValue(undefined);
+  uploadFile.mockResolvedValue(`${FAKE_PUBLIC_URL}/products/test/image.jpg`);
+  deleteFile.mockResolvedValue(undefined);
 });
 
 describe('POST /api/products/:id/image', () => {
@@ -69,7 +69,7 @@ describe('POST /api/products/:id/image', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.product.imageUrl).toBe(`${FAKE_PUBLIC_URL}/products/test/image.jpg`);
-    expect(uploadToR2).toHaveBeenCalledTimes(1);
+    expect(uploadFile).toHaveBeenCalledTimes(1);
 
     // Persisted, not just echoed back in the response
     const fetched = await request(app).get(`/api/products/${productId}`);
@@ -80,20 +80,20 @@ describe('POST /api/products/:id/image', () => {
     const cookie = await signUpSupplier(supplier);
     const productId = await createProduct(cookie);
 
-    uploadToR2.mockResolvedValueOnce(`${FAKE_PUBLIC_URL}/products/${productId}/first.jpg`);
+    uploadFile.mockResolvedValueOnce(`${FAKE_PUBLIC_URL}/products/${productId}/first.jpg`);
     await request(app)
       .post(`/api/products/${productId}/image`)
       .set('Cookie', cookie)
       .attach('image', Buffer.from('first'), { filename: 'a.jpg', contentType: 'image/jpeg' });
 
-    uploadToR2.mockResolvedValueOnce(`${FAKE_PUBLIC_URL}/products/${productId}/second.jpg`);
+    uploadFile.mockResolvedValueOnce(`${FAKE_PUBLIC_URL}/products/${productId}/second.jpg`);
     const res = await request(app)
       .post(`/api/products/${productId}/image`)
       .set('Cookie', cookie)
       .attach('image', Buffer.from('second'), { filename: 'b.jpg', contentType: 'image/jpeg' });
 
     expect(res.status).toBe(200);
-    expect(deleteFromR2).toHaveBeenCalledWith(`products/${productId}/first.jpg`);
+    expect(deleteFile).toHaveBeenCalledWith(`products/${productId}/first.jpg`);
   });
 
   it('rejects a file that is not an allowed image type', async () => {
@@ -109,7 +109,7 @@ describe('POST /api/products/:id/image', () => {
       });
 
     expect(res.status).toBe(400);
-    expect(uploadToR2).not.toHaveBeenCalled();
+    expect(uploadFile).not.toHaveBeenCalled();
   });
 
   it('rejects a supplier who does not own the product', async () => {
@@ -123,7 +123,7 @@ describe('POST /api/products/:id/image', () => {
       .attach('image', Buffer.from('fake'), { filename: 'x.jpg', contentType: 'image/jpeg' });
 
     expect(res.status).toBe(403);
-    expect(uploadToR2).not.toHaveBeenCalled();
+    expect(uploadFile).not.toHaveBeenCalled();
   });
 
   it('rejects unauthenticated requests', async () => {

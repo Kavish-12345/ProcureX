@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import path from 'path';
 import prisma from '../lib/prisma.js';
 import logger from '../lib/logger.js';
-import { uploadToR2, deleteFromR2, extractKeyFromUrl } from '../lib/r2.js';
+import { uploadFile, deleteFile, extractKeyFromUrl } from '../lib/storage.js';
 import type { CreateProductInput, UpdateProductInput } from '../schemas/product.schema.js';
 
 export async function createProduct (req: Request, res: Response){
@@ -197,7 +197,7 @@ export async function uploadProductImage(req: Request, res: Response) {
 
     const extension = path.extname(req.file.originalname).toLowerCase() || '.jpg';
     const key = `products/${id}/${crypto.randomUUID()}${extension}`;
-    const imageUrl = await uploadToR2(req.file.buffer, key, req.file.mimetype);
+    const imageUrl = await uploadFile(req.file.buffer, key, req.file.mimetype);
 
     // Replacing an image: drop the old object so re-uploads don't leave orphans
     // accumulating in the bucket. Done after the new upload succeeds, so a failed
@@ -206,7 +206,7 @@ export async function uploadProductImage(req: Request, res: Response) {
       const oldKey = extractKeyFromUrl(existingProduct.imageUrl);
       if (oldKey) {
         try {
-          await deleteFromR2(oldKey);
+          await deleteFile(oldKey);
         } catch (error) {
           // A leftover object is not worth failing the request the user just made.
           logger.error('Failed to delete replaced product image:', error);
