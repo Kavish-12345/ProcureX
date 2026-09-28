@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import prisma from '../lib/prisma.js';
 import logger from '../lib/logger.js';
+import { createNotification } from '../lib/notifications.js';
 import type { CreateConnectionInput } from '../schemas/connection.schema.js';
 
 // Connection creation 
@@ -39,6 +40,13 @@ export async function createConnection(req: Request, res: Response) {
                 retailerId,
             },
         });
+
+        await createNotification(prisma, {
+            userId: data.supplierId,
+            type: 'CONNECTION_CREATED',
+            message: 'A retailer connected with you',
+        });
+
         return res.status(201).json({
             message: 'Connected successfully',
             connection,

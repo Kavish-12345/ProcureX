@@ -21,10 +21,44 @@ export function useLogin() {
     const setUser = useAuthStore((state) => state.setUser);
 
     return useMutation({
-        mutationFn: authApi.login,
+        mutationFn: async (data: Parameters<typeof authApi.login>[0]) => {
+            const res = await authApi.login(data);
+
+            if (res.data.user.role === 'ADMIN') {
+                // The backend has already issued cookies at this point, so simply
+                // showing an error would leave a real, usable session behind.
+                // Revoking them is what makes the rejection actually mean anything.
+                await authApi.logout();
+                throw new Error('Administrators must sign in from the admin portal');
+            }
+
+            return res;
+        },
         onSuccess: (res) => {
             setUser(res.data.user);
             navigate({ to: '/dashboard' });
+        },
+    });
+}
+
+export function useAdminLogin() {
+    const navigate = useNavigate();
+    const setUser = useAuthStore((state) => state.setUser);
+
+    return useMutation({
+        mutationFn: async (data: Parameters<typeof authApi.login>[0]) => {
+            const res = await authApi.login(data);
+
+            if (res.data.user.role !== 'ADMIN') {
+                await authApi.logout();
+                throw new Error('This account does not have admin access');
+            }
+
+            return res;
+        },
+        onSuccess: (res) => {
+            setUser(res.data.user);
+            navigate({ to: '/admin' });
         },
     });
 }

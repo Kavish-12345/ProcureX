@@ -56,7 +56,10 @@ client.interceptors.response.use(
             } catch (refreshError) {
                 processQueue(refreshError);
                 useAuthStore.getState().clearUser();
-                window.location.href = '/auth/login';
+                // Send an expired admin session back to the admin portal rather
+                // than dumping them on the customer login.
+                const isAdminArea = window.location.pathname.startsWith('/admin');
+                window.location.href = isAdminArea ? '/admin/login' : '/auth/login';
                 return Promise.reject(refreshError);
             } finally {
                 isRefreshing = false;

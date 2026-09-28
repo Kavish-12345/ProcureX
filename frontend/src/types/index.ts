@@ -5,6 +5,18 @@ export interface User {
   role: 'RETAILER' | 'SUPPLIER' | 'ADMIN';
   businessName: string;
   phone: string;
+  isActive?: boolean;
+  createdAt?: string;
+}
+
+export interface PlatformStats {
+  totalUsers: number;
+  retailers: number;
+  suppliers: number;
+  totalOrders: number;
+  pendingOrders: number;
+  unpaidEntries: number;
+  outstandingAmount: number | string;
 }
 
 export interface Supplier {
@@ -38,6 +50,7 @@ export interface Product {
   unitPrice: number;
   stock: number;
   unit: string;
+  imageUrl?: string;
   createdAt: string;
   supplierId: string;
   supplier?: {
@@ -90,6 +103,25 @@ export interface Order {
   };
   items?: OrderItem[];
   ledgerEntry?: LedgerEntry;
+}
+
+export type NotificationType =
+  | 'ORDER_PLACED'
+  | 'ORDER_CONFIRMED'
+  | 'ORDER_SHIPPED'
+  | 'ORDER_DELIVERED'
+  | 'ORDER_CANCELLED'
+  | 'CONNECTION_CREATED'
+  | 'PAYMENT_RECORDED';
+
+export interface Notification {
+  id: string;
+  type: NotificationType;
+  message: string;
+  isRead: boolean;
+  createdAt: string;
+  userId: string;
+  orderId?: string | null;
 }
 
 export interface ApiSuccess<T> {

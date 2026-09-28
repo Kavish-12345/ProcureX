@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import prisma from '../lib/prisma.js';
 import logger from '../lib/logger.js';
+import { createNotification } from '../lib/notifications.js';
 import type { MarkPaidInput } from '../schemas/ledger.schema.js';
 
 // Retailer :  see what they owe to each supplier
@@ -105,6 +106,13 @@ export async function markAsPaid(req: Request, res: Response) {
                 isPaid: true,
                 paidAt: data.paidAt ?? new Date(),
             },
+        });
+
+        await createNotification(prisma, {
+            userId: entry.order.retailerId,
+            type: 'PAYMENT_RECORDED',
+            message: `Payment of ₹${Number(entry.amount).toFixed(2)} was recorded`,
+            orderId: entry.orderId,
         });
 
         return res.status(200).json({
