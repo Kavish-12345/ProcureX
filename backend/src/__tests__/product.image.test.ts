@@ -30,7 +30,10 @@ const supplier = {
 
 const otherSupplier = { ...supplier, email: 'other-supplier@example.com' };
 
-function extractCookie(res: request.Response): string[] {
+// Typed structurally rather than as `request.Response`: `request` here comes from
+// a dynamic import (required so the module mock is registered first), which binds
+// only a value, not supertest's type namespace.
+function extractCookie(res: { headers: Record<string, string | string[] | undefined> }): string[] {
   const cookie = res.headers['set-cookie'];
   if (!cookie) throw new Error('Expected a Set-Cookie header, got none');
   return Array.isArray(cookie) ? cookie : [cookie];
