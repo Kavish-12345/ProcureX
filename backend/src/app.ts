@@ -19,6 +19,13 @@ import adminRoutes from './routes/admin.routes.js';
 
 const app = express();
 
+// In production the app sits behind Nginx, which forwards the real client IP in
+// X-Forwarded-For. Without this, Express reports Nginx's own address as req.ip,
+// so express-rate-limit buckets every visitor together under one key — meaning
+// the 10-requests-per-15-minutes auth limit is shared across all users at once.
+// The value is the number of proxies to trust: 1, because only Nginx sits in front.
+app.set('trust proxy', 1);
+
 app.use(helmet());
 app.use(
   cors({
