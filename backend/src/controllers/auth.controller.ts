@@ -17,25 +17,37 @@ const RESET_TOKEN_TTL_SECONDS = 15 * 60; // 15 minutes
 const ACCESS_TOKEN_MAX_AGE = 15 * 60 * 1000; // 15 minutes
 const REFRESH_TOKEN_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7 days
 
+const isProduction = process.env.NODE_ENV === 'production';
+
+// In production the frontend (Vercel) and the API (Azure VM) are different
+// sites, so every API call is cross-site. 'strict' would mean the browser
+// stores these cookies and then never sends them — login returns 200 and every
+// request after it is 401. 'none' allows cross-site sending, and requires
+// secure: true, which holds in production. Locally both sides are localhost,
+// so 'strict' is correct there and avoids needing HTTPS in dev.
+const AUTH_COOKIE_OPTIONS = {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? ('none' as const) : ('strict' as const),
+};
+
 function setAuthCookies(res: Response, accessToken: string, refreshToken: string){
     res.cookie('accessToken', accessToken, {
-       httpOnly: true, 
-       secure: process.env.NODE_ENV === 'production',
-       sameSite: 'strict',
+       ...AUTH_COOKIE_OPTIONS,
        maxAge: ACCESS_TOKEN_MAX_AGE,
-    }); 
+    });
 
     res.cookie('refreshToken', refreshToken, {
-       httpOnly: true,
-       secure: process.env.NODE_ENV === 'production',
-       sameSite: 'strict',
+       ...AUTH_COOKIE_OPTIONS,
        maxAge: REFRESH_TOKEN_MAX_AGE,
     })
 }
 
 function clearAuthCookies(res: Response){
-    res.clearCookie('accessToken');
-    res.clearCookie('refreshToken');
+    // The attributes must match those the cookie was set with, or the browser
+    // treats it as a different cookie and leaves the original in place.
+    res.clearCookie('accessToken', AUTH_COOKIE_OPTIONS);
+    res.clearCookie('refreshToken', AUTH_COOKIE_OPTIONS);
 }
 
 export async function signup(req: Request, res:Response){
